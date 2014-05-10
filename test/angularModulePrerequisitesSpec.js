@@ -1,6 +1,13 @@
 /* global angular, inject, describe, beforeEach, it, spyOn, expect */
+'use strict';
+
+/**
+ * Jasmine specs that test non-documented API of "angular.Module" which are pre-required to implemented the
+ * functionality of the "moduleIntrospector" service.
+ * The specs allows for quick detection of whether a (future) AngularJS version is (still) compatible with the
+ * "moduleIntrospector" service.
+ */
 describe('angular.Module', function() {
-    'use strict';
 
     var moduleInstance;
 

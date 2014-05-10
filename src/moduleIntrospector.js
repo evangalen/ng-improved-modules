@@ -8,7 +8,7 @@ ngImprovedModulesModule
     .factory('moduleIntrospector', moduleIntrospectorFactory);
 
 
-function moduleIntrospectorFactory() {
+function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
 
     /**
      * @ngdoc type
@@ -104,7 +104,8 @@ function moduleIntrospectorFactory() {
          * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
          */
         function getServiceInfo(serviceName) {
-            var result = findInvokeQueueItemInfo('$provide', serviceRegistrationMethodNames, serviceName);
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$provide', serviceRegistrationMethodNames, serviceName);
 
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
@@ -125,7 +126,8 @@ function moduleIntrospectorFactory() {
          * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
          */
         function getFilterInfo(filterName) {
-            var result = findInvokeQueueItemInfo('$filterProvider', 'register', filterName);
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$filterProvider', 'register', filterName);
 
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
@@ -144,10 +146,12 @@ function moduleIntrospectorFactory() {
         }
 
         /**
+         * @param {string} controllerName
          * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
          */
         function getControllerInfo(controllerName) {
-            var result = findInvokeQueueItemInfo('$controllerProvider', 'register', controllerName);
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$controllerProvider', 'register', controllerName);
 
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
@@ -165,72 +169,8 @@ function moduleIntrospectorFactory() {
             return result;
         }
 
-
-        /**
-         * @returns {?{module: Object, providerMethod: string, declaration: *}}
-         */
-        function findInvokeQueueItemInfo(providerName, providerMethods, itemName) {
-
-            /**
-             * @returns {?{module: Object, providerMethod: string, declaration: *}}
-             */
-            function findInvokeQueueItemInfoRecursive(currentModule, providerName, providerMethods, itemName) {
-                var serviceRegistrationOnInvokeQueue =
-                    findServiceDeclarationOnInvokeQueue(currentModule, providerName, providerMethods, itemName);
-                if (serviceRegistrationOnInvokeQueue) {
-                    return angular.extend(serviceRegistrationOnInvokeQueue, {module: currentModule});
-                }
-
-                for (var j = 0; j < currentModule.requires.length; j++) {
-                    var requiredModule = angular.module(currentModule.requires[j]);
-                    var result =
-                        findInvokeQueueItemInfoRecursive(requiredModule, providerName, providerMethods, itemName);
-
-                    if (result) {
-                        return result;
-                    }
-                }
-
-                return null;
-            }
-
-
-            return findInvokeQueueItemInfoRecursive(module, providerName, providerMethods, itemName);
-        }
-
-
-        /**
-         * @returns {?{providerMethod: string, declaration: *}}
-         */
-        function findServiceDeclarationOnInvokeQueue(currentModule, providerName, providerMethods, itemName) {
-            for (var i = 0; i < currentModule._invokeQueue.length; i++) {
-                var item = currentModule._invokeQueue[i];
-
-                var currentProviderName = item[0];
-                var currentProviderMethod = item[1];
-
-                if (currentProviderName === providerName && providerMethods.indexOf(currentProviderMethod) !== -1) {
-                    var invokeLaterArgs = item[2];
-
-                    if (invokeLaterArgs.length === 2) {
-                        if (invokeLaterArgs[0] === itemName) {
-                            return {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[1]};
-                        }
-                    } else if (invokeLaterArgs.length === 1) {
-                        if (invokeLaterArgs[0].hasOwnProperty(itemName)) {
-                            return {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[0][itemName]};
-                        }
-                    } else {
-                        throw 'Unexpected length of invokeQueue[' + i + '][2] (the "invokeLater" arguements): ' +
-                            invokeLaterArgs.length;
-                    }
-                }
-            }
-
-            return null;
-        }
-
     };
+
 
     /**
      * @ngdoc service
