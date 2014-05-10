@@ -21,19 +21,15 @@ function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
 
         /**
          * @param {string} serviceName
-         * @returns {?{module: Object, providerMethod: string, declaration: *}}
+         * @returns {{module: Object, providerMethod: string, declaration: *}}
          */
         this.getServiceDeclaration = function(serviceName) {
             var serviceInfo = getServiceInfo(serviceName);
             if (!serviceInfo.declaration) {
-                return null;
+                throw 'Could not find declaration of service with name: ' + serviceName;
             }
 
             return serviceInfo;
-        };
-
-        this.hasServiceDeclaration = function(serviceName) {
-            return this.getServiceDeclaration(serviceName) !== null;
         };
 
         /**
