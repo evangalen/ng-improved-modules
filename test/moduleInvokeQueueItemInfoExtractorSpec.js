@@ -1,5 +1,4 @@
 /* global angular, inject, describe, beforeEach, it, spyOn, expect, module, xit */
-'use strict';
 
 describe('moduleInvokeQueueItemInfoExtractor service', function() {
     'use strict';
