@@ -30,7 +30,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                         currentModule, '$provide', ['value'], 'aService');
 
-                expect(angular.equals(providerDeclaration,{providerMethod: 'value', declaration: service})).toBe(true);
+                expect(providerDeclaration).toEqual({providerMethod: 'value', declaration: service});
             });
 
             it('should return last non-constant declaration where more than one is registered', function() {
@@ -43,8 +43,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                     currentModule, '$provide', ['value', 'factory'], 'aService');
 
-                expect(angular.equals(providerDeclaration,{providerMethod: 'factory', declaration: factoryDeclaration}))
-                    .toBe(true);
+                expect(providerDeclaration).toEqual({providerMethod: 'factory', declaration: factoryDeclaration});
             });
 
             it('should return first constant declaration', function() {
@@ -57,9 +56,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                     currentModule, '$provide', ['constant'], 'aService');
 
-                expect(angular.equals(providerDeclaration,
-                        {providerMethod: 'constant', declaration: firstConstantDeclaration}))
-                    .toBe(true);
+                expect(providerDeclaration)
+                    .toEqual({providerMethod: 'constant', declaration: firstConstantDeclaration});
             });
         });
 
@@ -74,7 +72,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                     currentModule, '$provide', ['value'], 'aService');
 
-                expect(angular.equals(providerDeclaration,{providerMethod: 'value', declaration: service})).toBe(true);
+                expect(providerDeclaration).toEqual({providerMethod: 'value', declaration: service});
             });
 
             it('should return last non-constant declaration where more than one is registered', function() {
@@ -87,8 +85,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                     currentModule, '$provide', ['value', 'factory'], 'aService');
 
-                expect(angular.equals(providerDeclaration,{providerMethod: 'factory', declaration: factoryDeclaration}))
-                    .toBe(true);
+                expect(providerDeclaration).toEqual({providerMethod: 'factory', declaration: factoryDeclaration});
             });
 
             it('should return first constant declaration', function() {
@@ -101,9 +98,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
                     currentModule, '$provide', ['constant'], 'aService');
 
-                expect(angular.equals(providerDeclaration,
-                    {providerMethod: 'constant', declaration: firstConstantDeclaration}))
-                    .toBe(true);
+                expect(providerDeclaration)
+                    .toEqual({providerMethod: 'constant', declaration: firstConstantDeclaration});
             });
 
         });
@@ -132,9 +128,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                 module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
 
-            expect(angular.equals(result,
-                    {module: module, providerMethod: 'value', declaration: $httpOverridden}))
-                .toBe(true);
+            expect(result).toEqual({module: module, providerMethod: 'value', declaration: $httpOverridden});
         });
 
         it('should return overridden built-in service declared in another module', function() {
@@ -148,9 +142,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                 module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
 
-            expect(angular.equals(result,
-                    {module: anotherModule, providerMethod: 'value', declaration: $httpOverridden}))
-                .toBe(true);
+            expect(result).toEqual({module: anotherModule, providerMethod: 'value', declaration: $httpOverridden});
         });
 
         it('should return overridden service of service originally declared in another module (even a constant ' +
@@ -167,9 +159,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                 module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
 
-            expect(angular.equals(result,
-                    {module: module, providerMethod: 'constant', declaration: overriddenService}))
-                .toBe(true);
+            expect(result).toEqual({module: module, providerMethod: 'constant', declaration: overriddenService});
         });
 
         //TODO: enable this spec once the TODO has been implemented
@@ -187,9 +177,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                 module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
 
-            expect(angular.equals(result,
-                    {module: module, providerMethod: 'constant', declaration: originalService}))
-                .toBe(true);
+            expect(result).toEqual({module: module, providerMethod: 'constant', declaration: originalService});
         });
 
     });

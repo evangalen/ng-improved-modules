@@ -4,11 +4,9 @@
 /** @const */
 var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
 
-ngImprovedModulesModule
-    .factory('moduleIntrospector', moduleIntrospectorFactory);
-
-
-function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
+ngImprovedModulesModule.factory('moduleIntrospector', [
+    'moduleInvokeQueueItemInfoExtractor',
+    function(moduleInvokeQueueItemInfoExtractor) {
 
     /**
      * @ngdoc type
@@ -71,25 +69,30 @@ function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
                 throw 'Could not find declaration of controller with name: ' + controllerName;
             }
 
-            return getRegisteredObjectDependencies($injector, controllerInfo);
+            return getRegisteredObjectDependencies($injector, controllerInfo, '$scope');
         };
 
 
         /**
          * @param injector
          * @param {{module: Object, declaration: *}} registeredObjectInfo
+         * @param {...string} toBeIgnoredDependencyServiceNames
          * @returns {Object.<{instance: *, module: angular.Module}>}
          */
-        function getRegisteredObjectDependencies(injector, registeredObjectInfo) {
+        function getRegisteredObjectDependencies(injector, registeredObjectInfo, toBeIgnoredDependencyServiceNames) {
             var dependencyServiceNames = injector.annotate(registeredObjectInfo.declaration);
+            toBeIgnoredDependencyServiceNames = Array.prototype.slice.call(arguments, 2);
 
             var result = {};
             angular.forEach(dependencyServiceNames, function(dependencyServiceName) {
-                var dependencyServiceInfo = {};
-                dependencyServiceInfo.instance = injector.get(dependencyServiceName);
-                dependencyServiceInfo.module = getServiceInfo(dependencyServiceName).module;
+                if (!toBeIgnoredDependencyServiceNames ||
+                        toBeIgnoredDependencyServiceNames.indexOf(dependencyServiceName) === -1) {
+                    var dependencyServiceInfo = {};
+                    dependencyServiceInfo.instance = injector.get(dependencyServiceName);
+                    dependencyServiceInfo.module = getServiceInfo(dependencyServiceName).module;
 
-                result[dependencyServiceName] = dependencyServiceInfo;
+                    result[dependencyServiceName] = dependencyServiceInfo;
+                }
             });
 
             return result;
@@ -128,8 +131,7 @@ function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
 
-                var $filter = ngModuleInjector.get('$filter');
-                if ($filter(filterName)) {
+                if (ngModuleInjector.has(filterName + 'Filter')) {
                     result = {module: angular.module('ng')};
                 }
             }
@@ -148,15 +150,6 @@ function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
         function getControllerInfo(controllerName) {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                     module, '$controllerProvider', 'register', controllerName);
-
-            if (!result) {
-                var ngModuleInjector = angular.injector(['ng']);
-
-                var $controller = ngModuleInjector.get('$controller');
-                if ($controller(controllerName)) {
-                    result = {module: angular.module('ng')};
-                }
-            }
 
             if (!result) {
                 throw 'Could not find controller with name: ' + controllerName;
@@ -179,4 +172,4 @@ function moduleIntrospectorFactory(moduleInvokeQueueItemInfoExtractor) {
         return new ngImprovedModules.ModuleIntrospector(module);
     };
 
-}
+}]);
