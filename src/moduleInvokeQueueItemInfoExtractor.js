@@ -1,13 +1,15 @@
-/* global angular, ngImprovedModulesModule, ngImprovedModules */
+/* global angular */
+(function() {
 'use strict';
 
-ngImprovedModules.ModuleInvokeQueueItemInfoExtractor = function() {
+angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor', [function () {
+
     var that = this;
 
     /**
      * @returns {?{module: Object, providerMethod: string, declaration: *}}
      */
-    this.findInvokeQueueItemInfo = function(module, providerName, providerMethods, itemName) {
+    this.findInvokeQueueItemInfo = function (module, providerName, providerMethods, itemName) {
 
         /**
          * @returns {?{module: Object, providerMethod: string, declaration: *}}
@@ -41,7 +43,7 @@ ngImprovedModules.ModuleInvokeQueueItemInfoExtractor = function() {
     /**
      * @returns {?{providerMethod: string, declaration: *}}
      */
-    this.findProviderDeclarationOnInvokeQueue = function(currentModule, providerName, providerMethods, itemName) {
+    this.findProviderDeclarationOnInvokeQueue = function (currentModule, providerName, providerMethods, itemName) {
         var result;
 
         for (var i = 0; i < currentModule._invokeQueue.length; i++) {
@@ -83,8 +85,6 @@ ngImprovedModules.ModuleInvokeQueueItemInfoExtractor = function() {
     function isConstantService(providerName, providerMethod) {
         return providerName === '$provide' && providerMethod === 'constant';
     }
-};
+}]);
 
-
-ngImprovedModulesModule
-    .service('moduleInvokeQueueItemInfoExtractor', ngImprovedModules.ModuleInvokeQueueItemInfoExtractor);
+}());

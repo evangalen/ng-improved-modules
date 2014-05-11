@@ -1,5 +1,4 @@
 /* global angular, inject, describe, beforeEach, it, spyOn, expect */
-'use strict';
 
 /**
  * Jasmine specs that test non-documented API of "angular.Module" which are pre-required to implemented the
@@ -8,6 +7,7 @@
  * "moduleIntrospector" service.
  */
 describe('angular.Module', function() {
+    'use strict';
 
     var moduleInstance;
 

@@ -1,7 +1,11 @@
 /* global angular, inject, describe, beforeEach, it, spyOn, expect, module, jasmine, serviceRegistrationMethodNames */
-'use strict';
 
 describe('moduleIntrospector service', function() {
+    'use strict';
+
+    //TODO: remove once "module.prefix" + "module.suffix" is used
+    /** @const */
+    var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
 
     var moduleInvokeQueueItemInfoExtractor;
 

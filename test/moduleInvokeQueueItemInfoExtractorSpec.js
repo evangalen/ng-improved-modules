@@ -2,6 +2,7 @@
 'use strict';
 
 describe('moduleInvokeQueueItemInfoExtractor service', function() {
+    'use strict';
 
     beforeEach(module('ngImprovedModules'));
 

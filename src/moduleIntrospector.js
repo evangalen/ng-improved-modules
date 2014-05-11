@@ -1,10 +1,11 @@
-/* global angular, ngImprovedModulesModule, ngImprovedModules */
+/* global angular */
+(function() {
 'use strict';
 
 /** @const */
 var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
 
-ngImprovedModulesModule.factory('moduleIntrospector', [
+angular.module('ngImprovedModules').factory('moduleIntrospector', [
     'moduleInvokeQueueItemInfoExtractor',
     function(moduleInvokeQueueItemInfoExtractor) {
 
@@ -13,7 +14,7 @@ ngImprovedModulesModule.factory('moduleIntrospector', [
      * @param {string} moduleName
      * @constructor
      */
-    ngImprovedModules.ModuleIntrospector = function(moduleName) {
+    function ModuleIntrospector(moduleName) {
 
         var module = angular.module(moduleName);
 
@@ -158,18 +159,20 @@ ngImprovedModulesModule.factory('moduleIntrospector', [
             return result;
         }
 
-    };
+    }
 
 
     /**
      * @ngdoc service
      * @name moduleIntrospector
      * @param {string} module
-     * @returns {ngImprovedModules.ModuleIntrospector}
+     * @returns {ModuleIntrospector}
      * @function
      */
     return function moduleIntrospector(module) {
-        return new ngImprovedModules.ModuleIntrospector(module);
+        return new ModuleIntrospector(module);
     };
 
 }]);
+
+}());

@@ -1,0 +1,6 @@
+/**
+ * @license ngImprovedModules
+ * (c) 2014 Emil van Galen. https://github.com/evangalen/ng-improved-modules
+ * License: MIT
+ */
+;(function(window, document, undefined) {

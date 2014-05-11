@@ -1,7 +1,6 @@
 /* global angular, inject, describe, beforeEach, it, spyOn, expect, module */
-'use strict';
-
 describe('angular.Module', function() {
+    'use strict';
 
     /** @const */
     var firstService = {first: angular.noop};
