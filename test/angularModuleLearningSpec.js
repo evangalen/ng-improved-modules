@@ -1,4 +1,3 @@
-/* global angular, inject, describe, beforeEach, it, spyOn, expect, module */
 describe('angular.Module', function() {
     'use strict';
 
@@ -56,8 +55,8 @@ describe('angular.Module', function() {
 
     it('should not allow overriding a constant service with a constant service in the same module', function() {
         angular.module('aModule', [])
-            .constant({'aService': firstService})
-            .constant({'aService': secondService});
+            .constant('aService', firstService)
+            .constant('aService', secondService);
         angular.mock.module('aModule');
 
         inject(function(aService) {

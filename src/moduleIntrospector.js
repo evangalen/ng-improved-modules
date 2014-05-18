@@ -1,5 +1,4 @@
-/* global angular */
-(function() {
+;(function() {
 'use strict';
 
 /** @const */
@@ -110,7 +109,7 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
 
-                if (ngModuleInjector.has(serviceName)) {
+                if (hasService(ngModuleInjector, serviceName)) {
                     result = {module: angular.module('ng')};
                 }
             }
@@ -132,7 +131,7 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
 
-                if (ngModuleInjector.has(filterName + 'Filter')) {
+                if (hasService(ngModuleInjector, filterName + 'Filter')) {
                     result = {module: angular.module('ng')};
                 }
             }
@@ -157,6 +156,29 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
             }
 
             return result;
+        }
+
+        /**
+         * @param {$injector} injector
+         * @param {string} serviceName
+         * @returns {boolean}
+         */
+        function hasService(injector, serviceName) {
+            if (injector.has) {
+                return injector.has(serviceName);
+            } else {
+                try {
+                    injector.get(serviceName);
+
+                    return true;
+                } catch (e) {
+                    if (e instanceof Error && e.message.indexOf('Unknown provider: ') === 0) {
+                        return false;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
         }
 
     }

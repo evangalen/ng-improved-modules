@@ -1,5 +1,3 @@
-/* global angular, inject, describe, beforeEach, it, spyOn, expect */
-
 /**
  * Jasmine specs that test non-documented API of "angular.Module" which are pre-required to implemented the
  * functionality of the "moduleIntrospector" service.
@@ -9,10 +7,12 @@
 describe('angular.Module', function() {
     'use strict';
 
+    var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
+
     var moduleInstance;
 
     beforeEach(function() {
-        moduleInstance = angular.module('aTestingModule', []);
+        moduleInstance = angular.module('angularModulePrerequisitesSpecModule', []);
         spyOn(moduleInstance._invokeQueue, 'push').andCallThrough();
         spyOn(moduleInstance._invokeQueue, 'unshift').andCallThrough();
     });
@@ -271,7 +271,11 @@ describe('angular.Module', function() {
                 });
 
 
-                it('with an object', function() {
+                it('with an object' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+                    if (angular1_0) {
+                        return;
+                    }
+
                     var hash = {
                         aFilterName: filterFactory
                     };
@@ -340,7 +344,7 @@ describe('angular.Module', function() {
 
 
 
-    describe('$directiveProvider delegate method', function() {
+    describe('$compileProvider delegate method', function() {
 
         var directive;
 
@@ -400,7 +404,6 @@ describe('angular.Module', function() {
     });
 
 
-
     /**
      * Asserts that an invocation of <code>provider[method]</code> with arguments <code>firstInvokeArgument</code>
      * and <code>secondInvokeArgument</code> is "queued" on "moduleInstance" for "later invocation".
@@ -408,8 +411,10 @@ describe('angular.Module', function() {
      * @param {string} provider either "$provide" or a name like "...Provider"
      * @param {string} method either a "$provide" method or a configuration method of a "...Provider"
      * @param {string} insertMethod
-     * @param {(string|Object.<*>)} firstInvokeArgument the first argument of the queued <code>provider[method]</code> invocation
-     * @param {(*|Object.<*>)=} secondInvokeArgument the second argument of the queued <code>provider[method]</code> invocation
+     * @param {(string|Object.<*>)} firstInvokeArgument the first argument of the queued <code>provider[method]</code>
+     *          invocation
+     * @param {(*|Object.<*>)=} secondInvokeArgument the second argument of the queued <code>provider[method]</code>
+     *          invocation
      */
     function assertMethodIsQueuedToBeInvokedLater(
             provider, method, insertMethod, firstInvokeArgument, secondInvokeArgument) {

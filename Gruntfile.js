@@ -1,10 +1,6 @@
-/* global module, require */
-
 module.exports = function(grunt) {
-    'use strict';
-
-    // load all grunt tasks
-    require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
+    //grunt plugins
+    require('load-grunt-tasks')(grunt);
 
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
@@ -28,29 +24,23 @@ module.exports = function(grunt) {
             }
         },
         karma: {
-            unit: {
-                configFile: 'karma.conf.js',
+            angular_1_0: {
+                configFile: 'karma-angular-1.0.conf.js',
+                singleRun: true
+            },
+            angular_1_2: {
+                configFile: 'karma-angular-1.2.conf.js',
+                singleRun: true
+            },
+            angular_1_3: {
+                configFile: 'karma-angular-1.3.conf.js',
                 singleRun: true
             }
         },
         jshint: {
-            files: ['src/**/*.js', 'test/**/*.js'],
+            files: ['*.js', 'src/**/*.js', 'test/**/*.js'],
             options: {
-                "globalstrict": true,
-                // options here to override JSHint defaults
-                globals: {
-                    jQuery: true,
-                    console: true,
-                    module: true,
-                    document: true,
-                    angular: true,
-                    jasmine: true,
-                    window: true,
-                    describe: true,
-                    beforeEach: true,
-                    it: true,
-                    expect: true
-                }
+                jshintrc: true
             }
         },
         watch: {

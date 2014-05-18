@@ -1,5 +1,3 @@
-/* global angular, inject, describe, beforeEach, it, spyOn, expect, module, jasmine, serviceRegistrationMethodNames */
-
 describe('moduleIntrospector service', function() {
     'use strict';
 
