@@ -15,20 +15,30 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
      */
     function ModuleIntrospector(moduleName) {
 
+        /**
+         * @param {string} serviceName
+         * @returns {{module: Object, providerMethod: string, declaration: *}}
+         */
+        function getServiceDeclaration(serviceName) {
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                module, '$provide', serviceRegistrationMethodNames, serviceName);
+
+            if (!result) {
+                throw 'Could not find service with name: ' + serviceName;
+            }
+
+            return result;
+        }
+
+
+
         var module = angular.module(moduleName);
 
         /**
          * @param {string} serviceName
          * @returns {{module: Object, providerMethod: string, declaration: *}}
          */
-        this.getServiceDeclaration = function(serviceName) {
-            var serviceInfo = getServiceInfo(serviceName);
-            if (!serviceInfo.declaration) {
-                throw 'Could not find declaration of service with name: ' + serviceName;
-            }
-
-            return serviceInfo;
-        };
+        this.getServiceDeclaration = getServiceDeclaration;
 
         /**
          * @param injector
@@ -36,10 +46,7 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
          * @returns {Object.<{instance: *, module: angular.Module}>}
          */
         this.getServiceDependencies = function(injector, serviceName) {
-            var serviceInfo = getServiceInfo(serviceName);
-            if (!serviceInfo.declaration) {
-                throw 'Could not find declaration of service with name: ' + serviceName;
-            }
+            var serviceInfo = this.getServiceDeclaration(serviceName);
 
             return getRegisteredObjectDependencies(injector, serviceInfo);
         };
@@ -51,6 +58,8 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
          */
         this.getFilterDependencies = function(injector, filterName) {
             var filterInfo = getFilterInfo(filterName);
+
+            //TODO: add support for detecting the filters from the (built-in) "ng" module
             if (!filterInfo.declaration) {
                 throw 'Could not find declaration of filter with name: ' + filterName;
             }
@@ -64,13 +73,11 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
          * @returns {Object.<{instance: *, module: angular.Module}>}
          */
         this.getControllerDependencies = function($injector, controllerName) {
-            var controllerInfo = getControllerInfo(controllerName);
-            if (!controllerInfo.declaration) {
-                throw 'Could not find declaration of controller with name: ' + controllerName;
-            }
+            var controllerInfo = getControllerDeclaration(controllerName);
 
             return getRegisteredObjectDependencies($injector, controllerInfo, '$scope');
         };
+
 
 
         /**
@@ -89,7 +96,7 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
                         toBeIgnoredDependencyServiceNames.indexOf(dependencyServiceName) === -1) {
                     var dependencyServiceInfo = {};
                     dependencyServiceInfo.instance = injector.get(dependencyServiceName);
-                    dependencyServiceInfo.module = getServiceInfo(dependencyServiceName).module;
+                    dependencyServiceInfo.module = getServiceDeclaration(dependencyServiceName).module;
 
                     result[dependencyServiceName] = dependencyServiceInfo;
                 }
@@ -102,32 +109,12 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
         /**
          * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
          */
-        function getServiceInfo(serviceName) {
-            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                    module, '$provide', serviceRegistrationMethodNames, serviceName);
-
-            if (!result) {
-                var ngModuleInjector = angular.injector(['ng']);
-
-                if (hasService(ngModuleInjector, serviceName)) {
-                    result = {module: angular.module('ng')};
-                }
-            }
-
-            if (!result) {
-                throw 'Could not find service with name: ' + serviceName;
-            }
-
-            return result;
-        }
-
-        /**
-         * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
-         */
+        //TODO: refactor method to be a "getFilterDeclaration" once filter from the (built-in) "ng" module are returned
         function getFilterInfo(filterName) {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                     module, '$filterProvider', 'register', filterName);
 
+            //TODO: remove this whole if once filters from the (built-in) "ng" module are returned
             if (!result) {
                 var ngModuleInjector = angular.injector(['ng']);
 
@@ -145,9 +132,9 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
 
         /**
          * @param {string} controllerName
-         * @returns {({module: Object}|{module: Object, providerMethod: string, declaration: *})}
+         * @returns {{module: Object, providerMethod: string, declaration: *}}
          */
-        function getControllerInfo(controllerName) {
+        function getControllerDeclaration(controllerName) {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                     module, '$controllerProvider', 'register', controllerName);
 

@@ -1,7 +1,20 @@
 ;(function() {
 'use strict';
 
-angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor', [function () {
+/** @const */
+var emptyInjector = angular.injector([]);
+
+var $provide;
+
+angular.module('$provideExtractorModule', ['ng'])
+    .config(['$provide', function(_$provide_) {
+        $provide = _$provide_;
+    }]);
+
+angular.injector(['$provideExtractorModule']);
+
+/** @constructor */
+function ModuleInvokeQueueItemInfoExtractor() {
 
     var that = this;
 
@@ -16,6 +29,18 @@ angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor'
         function findInvokeQueueItemInfoRecursive(currentModule, providerName, providerMethods, itemName) {
             var result = null;
 
+            var providerDeclarationOnInvokeQueue;
+
+            if (currentModule === module) {
+                var ngModule = angular.module('ng');
+
+                providerDeclarationOnInvokeQueue =
+                    that.findProviderDeclarationOnInvokeQueue(ngModule, providerName, providerMethods, itemName);
+                if (providerDeclarationOnInvokeQueue) {
+                    result = angular.extend(providerDeclarationOnInvokeQueue, {module: ngModule});
+                }
+            }
+
             for (var j = 0; j < currentModule.requires.length; j++) {
                 var requiredModule = angular.module(currentModule.requires[j]);
 
@@ -25,7 +50,7 @@ angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor'
                 //  override a earlier constant declaration
             }
 
-            var providerDeclarationOnInvokeQueue =
+            providerDeclarationOnInvokeQueue =
                 that.findProviderDeclarationOnInvokeQueue(currentModule, providerName, providerMethods, itemName);
             if (providerDeclarationOnInvokeQueue) {
                 result = angular.extend(providerDeclarationOnInvokeQueue, {module: currentModule});
@@ -43,39 +68,119 @@ angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor'
      * @returns {?{providerMethod: string, declaration: *}}
      */
     this.findProviderDeclarationOnInvokeQueue = function (currentModule, providerName, providerMethods, itemName) {
-        var result;
+        var result = null;
 
-        for (var i = 0; i < currentModule._invokeQueue.length; i++) {
-            var item = currentModule._invokeQueue[i];
+        if (currentModule._configBlocks) {
+            for (var i = 0; i < currentModule._configBlocks.length; i++) {
+                var configBlockElement = currentModule._configBlocks[i];
 
-            var currentProviderName = item[0];
-            var currentProviderMethod = item[1];
-
-            if (currentProviderName === providerName && providerMethods.indexOf(currentProviderMethod) !== -1) {
-                var invokeLaterArgs = item[2];
-
-                if (invokeLaterArgs.length === 2) {
-                    if (invokeLaterArgs[0] === itemName) {
-                        result = {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[1]};
-
-                        if (isConstantService(providerName, currentProviderMethod)) {
-                            return result;
-                        }
-                    }
-                } else if (invokeLaterArgs.length === 1) {
-                    if (invokeLaterArgs[0].hasOwnProperty(itemName)) {
-                        result = {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[0][itemName]};
-
-                        if (isConstantService(providerName, currentProviderMethod)) {
-                            return result;
-                        }
-                    }
-                } else {
-                    throw 'Unexpected length of invokeQueue[' + i + '][2] (the "invokeLater" arguments): ' +
-                        invokeLaterArgs.length;
-                }
+                result =
+                    this.handleInvokeQueueElement(result, configBlockElement, providerName, providerMethods, itemName);
             }
         }
+
+        for (var j = 0; j < currentModule._invokeQueue.length; j++) {
+            var invokeQueueElement = currentModule._invokeQueue[j];
+
+            result = this.handleInvokeQueueElement(result, invokeQueueElement, providerName, providerMethods, itemName);
+        }
+
+        return result;
+    };
+
+    this.handleInvokeQueueElement = function(
+            previousResult, invokeQueueElement, providerName, providerMethods, itemName) {
+        var currentProviderName = invokeQueueElement[0];
+        var currentProviderMethod = invokeQueueElement[1];
+
+        //TODO: use a future "provider(name)" property from "result"
+        if (previousResult && isConstantService(previousResult, previousResult.providerMethod) &&
+                !isConstantService(currentProviderName, currentProviderMethod)) {
+            return previousResult;
+        }
+
+        if (currentProviderName === '$injector' && currentProviderMethod === 'invoke') {
+            //TODO: find out why we need to add an additional ...[0] to invokeQueueElement[2]
+            return this.findServicesRegisteredInConfigBlock(
+                    previousResult, invokeQueueElement[2][0], providerName, providerMethods, itemName);
+        } else if (currentProviderName === providerName && providerMethods.indexOf(currentProviderMethod) !== -1) {
+            var invokeLaterArgs = invokeQueueElement[2];
+
+            if (invokeLaterArgs.length === 2) {
+                if (invokeLaterArgs[0] === itemName) {
+           return {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[1]};
+                }
+            } else if (invokeLaterArgs.length === 1) {
+                if (invokeLaterArgs[0].hasOwnProperty(itemName)) {
+                    return {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[0][itemName]};
+                }
+            } else {
+                throw 'Unexpected length of invokeQueueElement[2] (the "invokeLater" arguments): ' +
+                        invokeLaterArgs.length;
+            }
+        }
+
+        return null;
+    };
+
+    this.findServicesRegisteredInConfigBlock = function(
+            previousResult, configBlock, providerName, providerMethods, itemName) {
+
+        function $provideMethodFactory(providerMethod) {
+            /**
+             * param {(string|Object.<*>)} firstArg
+             * @param {(*|Object.<*>)=} secondArg
+             */
+            return function(firstArg, secondArg) {
+                var $provideMethodResult = $provide[providerMethod].call($provide, firstArg, secondArg);
+
+                //TODO: use a future "provider(name)" property from "result"
+                if (result && isConstantService(providerName, result.providerMethod) &&
+                        !(providerName === '$provide' && providerMethod === 'constant')) {
+                    return;
+                }
+
+                if (angular.isObject(firstArg)) {
+                    angular.forEach(firstArg, function(declaration, serviceName) {
+                        if (serviceName === itemName) {
+                            result = {providerMethod: providerMethod, declaration: declaration};
+                        }
+                    });
+                } else {
+                    if (firstArg === itemName) {
+                        result = {providerMethod: providerMethod, declaration: secondArg};
+                    }
+                }
+
+                return $provideMethodResult;
+            };
+        }
+
+        var result = previousResult;
+
+        // currently only a "$provide" provider is supported
+        if (providerName !== '$provide') {
+            return null;
+        }
+
+        var annotatedConfigBlock = angular.isFunction(configBlock) ? emptyInjector.annotate(configBlock) : configBlock;
+
+        if (annotatedConfigBlock.length !== 2 || annotatedConfigBlock[0] !== '$provide') {
+            return;
+        }
+
+        var $provideWrapper = {
+            provider: $provideMethodFactory('provider'),
+            factory: $provideMethodFactory('factory'),
+            service: $provideMethodFactory('service'),
+            value: $provideMethodFactory('value'),
+            constant: $provideMethodFactory('constant'),
+
+            //TODO: add support for "decorator" (if at all possible)
+            decorator: angular.noop
+        };
+
+        emptyInjector.invoke(annotatedConfigBlock, angular.module('ng'), {$provide: $provideWrapper});
 
         return result;
     };
@@ -84,6 +189,10 @@ angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor'
     function isConstantService(providerName, providerMethod) {
         return providerName === '$provide' && providerMethod === 'constant';
     }
-}]);
+
+}
+
+
+angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor', ModuleInvokeQueueItemInfoExtractor);
 
 }());

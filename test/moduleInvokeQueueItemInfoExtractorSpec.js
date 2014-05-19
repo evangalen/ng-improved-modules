@@ -107,13 +107,13 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
 
     describe('findInvokeQueueItemInfoRecursive method', function() {
 
-        it('should return null for non-overridden service of the (built-in) "ng" module', function() {
+        it('should return service of the (built-in) "ng" module', function() {
             var module = angular.module('aModule', []);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                     module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
 
-            expect(result).toBeNull();
+            expect(result).toBeDefined();
         });
 
         it('should return overridden built-in service', function() {
