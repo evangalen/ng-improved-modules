@@ -1,5 +1,5 @@
 {
-    /*"plusplus": true,*/
+    "plusplus": true,
     "nonew": true,
     "curly": true,
     "latedef": true,
