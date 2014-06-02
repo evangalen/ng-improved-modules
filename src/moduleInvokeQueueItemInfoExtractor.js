@@ -91,7 +91,7 @@ function ModuleInvokeQueueItemInfoExtractor() {
 }
 
 
-angular.module('ngImprovedModules')
+angular.module('ngModuleIntrospector')
     .service('moduleInvokeQueueItemInfoExtractor', ModuleInvokeQueueItemInfoExtractor);
 
 }());

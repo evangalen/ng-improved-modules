@@ -7,7 +7,7 @@ describe('moduleIntrospector service', function() {
 
     var moduleInvokeQueueItemInfoExtractor;
 
-    beforeEach(module('ngImprovedModules', function($provide) {
+    beforeEach(module('ngModuleIntrospector', function($provide) {
         moduleInvokeQueueItemInfoExtractor = {
             findInvokeQueueItemInfo: jasmine.createSpy()
         };

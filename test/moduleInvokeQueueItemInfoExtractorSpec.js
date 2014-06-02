@@ -1,7 +1,7 @@
 describe('moduleInvokeQueueItemInfoExtractor service', function() {
     'use strict';
 
-    beforeEach(module('ngImprovedModules'));
+    beforeEach(module('ngModuleIntrospector'));
 
     var moduleInvokeQueueItemInfoExtractor;
 

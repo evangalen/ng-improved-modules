@@ -197,7 +197,7 @@ function moduleIntrospectorServiceFactory(moduleInvokeQueueItemInfoExtractor) {
 }
 
 
-angular.module('ngImprovedModules')
+angular.module('ngModuleIntrospector')
     .factory('moduleIntrospector', moduleIntrospectorServiceFactory);
 
 }());
