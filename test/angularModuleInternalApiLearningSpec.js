@@ -411,25 +411,30 @@ describe('angular.Module', function() {
      * @param {string} provider either "$provide" or a name like "...Provider"
      * @param {string} method either a "$provide" method or a configuration method of a "...Provider"
      * @param {string} insertMethod
-     * @param {(string|Object.<*>)} firstInvokeArgument the first argument of the queued <code>provider[method]</code>
-     *          invocation
-     * @param {(*|Object.<*>)=} secondInvokeArgument the second argument of the queued <code>provider[method]</code>
-     *          invocation
+     * @param {...*} invocationArguments
      */
-    function assertMethodIsQueuedToBeInvokedLater(
-            provider, method, insertMethod, firstInvokeArgument, secondInvokeArgument) {
-        expect(moduleInstance._invokeQueue[insertMethod]).toHaveBeenCalled();
+    function assertMethodIsQueuedToBeInvokedLater(provider, method, insertMethod, invocationArguments) {
+        invocationArguments = Array.prototype.slice.call(arguments, 3);
 
         var insertMethodInvokeArg = moduleInstance._invokeQueue[insertMethod].mostRecentCall.args[0];
 
-        expect(insertMethodInvokeArg.length).toBe(3);
-        expect(insertMethodInvokeArg[0]).toBe(provider);
-        expect(insertMethodInvokeArg[1]).toBe(method);
-        expect(insertMethodInvokeArg[2].length).toBe(secondInvokeArgument ? 2 : 1);
-        expect(insertMethodInvokeArg[2][0]).toBe(firstInvokeArgument);
-        if (secondInvokeArgument) {
-            expect(insertMethodInvokeArg[2][1]).toBe(secondInvokeArgument);
-        }
+        /*jshint validthis:true */
+        assertInvokeQueueElement.apply(this, [insertMethodInvokeArg, provider, method].concat(invocationArguments));
+    }
+
+    /**
+     * @param {Array.<*>} invokeQueueElement
+     * @param {string} provider either "$provide" or a name like "...Provider"
+     * @param {string} method either a "$provide" method or a configuration method of a "...Provider"
+     * @param {...*} invocationArguments
+     */
+    function assertInvokeQueueElement(invokeQueueElement, provider, method, invocationArguments) {
+        invocationArguments = Array.prototype.slice.call(arguments, 3);
+
+        expect(invokeQueueElement.length).toBe(3);
+        expect(invokeQueueElement[0]).toBe(provider);
+        expect(invokeQueueElement[1]).toBe(method);
+        expect(invokeQueueElement[2]).toEqual(invocationArguments);
     }
 
 });
