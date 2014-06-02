@@ -123,6 +123,67 @@ function ModuleInvokeQueueItemInfoExtractor() {
         return null;
     };
 
+    this.findServicesRegisteredInConfigBlock = function(
+            previousResult, configBlock, providerName, providerMethods, itemName) {
+
+        function $provideMethodFactory(providerMethod) {
+            /**
+             * param {(string|Object.<*>)} firstArg
+             * @param {(*|Object.<*>)=} secondArg
+             */
+            return function(firstArg, secondArg) {
+                var $provideMethodResult = $provide[providerMethod].call($provide, firstArg, secondArg);
+
+                //TODO: use a future "provider(name)" property from "result"
+                if (result && isConstantService(providerName, result.providerMethod) &&
+                        !(providerName === '$provide' && providerMethod === 'constant')) {
+                    return;
+                }
+
+                if (angular.isObject(firstArg)) {
+                    angular.forEach(firstArg, function(declaration, serviceName) {
+                        if (serviceName === itemName) {
+                            result = {providerMethod: providerMethod, declaration: declaration};
+                        }
+                    });
+                } else {
+                    if (firstArg === itemName) {
+                        result = {providerMethod: providerMethod, declaration: secondArg};
+                    }
+                }
+
+                return $provideMethodResult;
+            };
+        }
+
+        var result = previousResult;
+
+        // currently only a "$provide" provider is supported
+        if (providerName !== '$provide') {
+            return null;
+        }
+
+        var annotatedConfigBlock = angular.isFunction(configBlock) ? emptyInjector.annotate(configBlock) : configBlock;
+
+        if (annotatedConfigBlock.length !== 2 || annotatedConfigBlock[0] !== '$provide') {
+            return;
+        }
+
+        var $provideWrapper = {
+            provider: $provideMethodFactory('provider'),
+            factory: $provideMethodFactory('factory'),
+            service: $provideMethodFactory('service'),
+            value: $provideMethodFactory('value'),
+            constant: $provideMethodFactory('constant'),
+
+            //TODO: add support for "decorator" (if at all possible)
+            decorator: angular.noop
+        };
+
+        emptyInjector.invoke(annotatedConfigBlock, angular.module('ng'), {$provide: $provideWrapper});
+
+        return result;
+    };
 
 
     function isConstantService(providerName, providerMethod) {

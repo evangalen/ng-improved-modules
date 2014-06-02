@@ -111,33 +111,23 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
          */
         //TODO: refactor method to be a "getFilterDeclaration" once filter from the (built-in) "ng" module are returned
         function getFilterInfo(filterName) {
-            var builtInFilterDeclaration = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                    module, '$provide', serviceRegistrationMethodNames, filterName + 'Filter');
-
-            var registeredFilterDeclaration = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                     module, '$filterProvider', 'register', filterName);
 
-            if (!builtInFilterDeclaration && !registeredFilterDeclaration) {
+            //TODO: remove this whole if once filters from the (built-in) "ng" module are returned
+            if (!result) {
+                var ngModuleInjector = angular.injector(['ng']);
+
+                if (hasService(ngModuleInjector, filterName + 'Filter')) {
+                    result = {module: angular.module('ng')};
+                }
+            }
+
+            if (!result) {
                 throw 'Could not find filter with name: ' + filterName;
             }
 
-            return registeredFilterDeclaration || builtInFilterDeclaration;
-
-
-//            //TODO: remove this whole if once filters from the (built-in) "ng" module are returned
-//            if (!result) {
-//                var ngModuleInjector = angular.injector(['ng']);
-//
-//                if (hasService(ngModuleInjector, filterName + 'Filter')) {
-//                    result = {module: angular.module('ng')};
-//                }
-//            }
-//
-//            if (!result) {
-//                throw 'Could not find filter with name: ' + filterName;
-//            }
-//
-//            return result;
+            return result;
         }
 
         /**
@@ -155,28 +145,28 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
             return result;
         }
 
-//        /**
-//         * @param {$injector} injector
-//         * @param {string} serviceName
-//         * @returns {boolean}
-//         */
-//        function hasService(injector, serviceName) {
-//            if (injector.has) {
-//                return injector.has(serviceName);
-//            } else {
-//                try {
-//                    injector.get(serviceName);
-//
-//                    return true;
-//                } catch (e) {
-//                    if (e instanceof Error && e.message.indexOf('Unknown provider: ') === 0) {
-//                        return false;
-//                    } else {
-//                        throw e;
-//                    }
-//                }
-//            }
-//        }
+        /**
+         * @param {$injector} injector
+         * @param {string} serviceName
+         * @returns {boolean}
+         */
+        function hasService(injector, serviceName) {
+            if (injector.has) {
+                return injector.has(serviceName);
+            } else {
+                try {
+                    injector.get(serviceName);
+
+                    return true;
+                } catch (e) {
+                    if (e instanceof Error && e.message.indexOf('Unknown provider: ') === 0) {
+                        return false;
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
 
     }
 

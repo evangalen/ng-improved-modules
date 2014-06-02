@@ -107,7 +107,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
 
     describe('findInvokeQueueItemInfoRecursive method', function() {
 
-        iit('should return service of the (built-in) "ng" module', function() {
+        it('should return service of the (built-in) "ng" module', function() {
             var module = angular.module('aModule', []);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
