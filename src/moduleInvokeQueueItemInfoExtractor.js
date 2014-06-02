@@ -22,14 +22,14 @@ function ModuleInvokeQueueItemInfoExtractor() {
         function findInvokeQueueItemInfoRecursive(currentModule, providerName, providerMethods, itemName) {
             var result = null;
 
-            for (var j = 0; j < currentModule.requires.length; j++) {
-                var requiredModule = angular.module(currentModule.requires[j]);
+            angular.forEach(currentModule.requires, function(nameOfRequiredModule) {
+                var requiredModule = angular.module(nameOfRequiredModule);
 
                 result = findInvokeQueueItemInfoRecursive(requiredModule, providerName, providerMethods, itemName);
 
                 //TODO: write logic to account for the fact that a non-constant declaration should not be allowed to
                 //  override a earlier constant declaration
-            }
+            });
 
             var providerDeclarationOnInvokeQueue =
                 that.findProviderDeclarationOnInvokeQueue(currentModule, providerName, providerMethods, itemName);
@@ -49,11 +49,9 @@ function ModuleInvokeQueueItemInfoExtractor() {
      * @returns {?{providerMethod: string, declaration: *}}
      */
     this.findProviderDeclarationOnInvokeQueue = function (currentModule, providerName, providerMethods, itemName) {
-        var result;
+        var result = null;
 
-        for (var i = 0; i < currentModule._invokeQueue.length; i++) {
-            var item = currentModule._invokeQueue[i];
-
+        angular.forEach(currentModule._invokeQueue, function(item, index) {
             var currentProviderName = item[0];
             var currentProviderMethod = item[1];
 
@@ -77,11 +75,11 @@ function ModuleInvokeQueueItemInfoExtractor() {
                         }
                     }
                 } else {
-                    throw 'Unexpected length of invokeQueue[' + i + '][2] (the "invokeLater" arguments): ' +
+                    throw 'Unexpected length of invokeQueue[' + index + '][2] (the "invokeLater" arguments): ' +
                         invokeLaterArgs.length;
                 }
             }
-        }
+        });
 
         return result;
     };

@@ -1,5 +1,5 @@
 {
-//    "plusplus": true,
+    "plusplus": true,
     "nonew": true,
     "curly": true,
     "latedef": true,
@@ -11,7 +11,7 @@
     "forin":true,
     "noempty": true,
     "quotmark": "single",
-//    "maxparams": 4,
+    "maxparams": 4,
     "eqeqeq": true,
     "strict": true,
     "undef": true,
@@ -36,7 +36,7 @@
         "jasmine": false,
         "expect": false,
 
-        // TODO: remove once all "xit" has been replaced with an "it"
+        // TODO: remove once the last "xit" has been replaced with an "it"
         "xit": false
     }
 }

@@ -1,12 +1,13 @@
 {
-//    "plusplus": true,
+    "plusplus": true,
     "nonew": true,
     "curly": true,
     "latedef": true,
-//    "maxdepth": 4,
+    "maxdepth": 4,
     "unused": true,
     "noarg": true,
     "trailing": true,
+    //TODO: remove once "module.prefix" + "module.suffix" is used
 //    "indent": 4,
     "forin":true,
     "noempty": true,
