@@ -48,6 +48,12 @@ describe('moduleIntrospector service', function() {
             }).toThrow('Could not find service with name: aNonExistingService');
         });
 
+        it('should throw exception for non-overridden built-in (from "ng" module) service', function() {
+            expect(function() {
+                moduleIntrospector.getServiceDeclaration('$http');
+            }).toThrow('Could not find declaration of service with name: $http');
+        });
+
         it('should return declared service', function() {
             var service = {a: 'service'};
 
@@ -75,6 +81,12 @@ describe('moduleIntrospector service', function() {
             }).toThrow('Could not find service with name: aNonExistingService');
         });
 
+        it('should throw exception for non-overridden built-in (from "ng" module) service', function() {
+            expect(function() {
+                moduleIntrospector.getServiceDependencies(injector, '$http');
+            }).toThrow('Could not find declaration of service with name: $http');
+        });
+
         it('should return dependencies for service', function() {
             var serviceFactory = ['anotherService', '$http', function() {
                 return {};
@@ -88,8 +100,6 @@ describe('moduleIntrospector service', function() {
                         return {module: module, providerMethod: 'factory', declaration: serviceFactory};
                     } else if (itemName === 'anotherService') {
                         return {module: module, providerMethod: 'value', declaration: anotherService};
-                    } else if (itemName === '$http') {
-                        return {module: ngModule, providerMethod: 'value', declaration: injector.get('$http')};
                     }
                 });
 
@@ -120,6 +130,12 @@ describe('moduleIntrospector service', function() {
             }).toThrow('Could not find filter with name: aNonExistingFilter');
         });
 
+        it('should throw exception for non-overridden built-in (from "ng" module) filter', function() {
+            expect(function() {
+                moduleIntrospector.getFilterDependencies(injector, 'currency');
+            }).toThrow('Could not find declaration of filter with name: currency');
+        });
+
         it('should return dependencies for filter', function() {
             var filterFactory = ['anotherService', '$http', function() {
                 return function() {};
@@ -133,8 +149,6 @@ describe('moduleIntrospector service', function() {
                         return {module: module, providerMethod: 'register', declaration: filterFactory};
                     } else if (itemName === 'anotherService') {
                         return {module: module, providerMethod: 'value', declaration: anotherService};
-                    } else if (itemName === '$http') {
-                        return {module: ngModule, providerMethod: 'value', declaration: injector.get('$http')};
                     }
                 });
 
@@ -176,8 +190,6 @@ describe('moduleIntrospector service', function() {
                         return {module: module, providerMethod: 'register', declaration: ACtrl};
                     } else if (itemName === 'anotherService') {
                         return {module: module, providerMethod: 'value', declaration: anotherService};
-                    } else if (itemName === '$http') {
-                        return {module: ngModule, providerMethod: 'value', declaration: injector.get('$http')};
                     }
                 });
 

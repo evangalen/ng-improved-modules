@@ -8,25 +8,13 @@ describe('angular.Module', function() {
     'use strict';
 
     var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
-    var angular1_3_or_higher =
-        (angular.version.major === 1 && angular.version.minor >= 3) || angular.version.major >= 2;
 
     var moduleInstance;
 
     beforeEach(function() {
-        var originalAngularModuleFn = angular.module;
-
-        spyOn(angular, 'module').andCallFake(function() {
-            var result = originalAngularModuleFn.apply(this, arguments);
-            spyOn(result._invokeQueue, 'push').andCallThrough();
-            spyOn(result._invokeQueue, 'unshift').andCallThrough();
-
-            return result;
-        });
-    });
-
-    beforeEach(function() {
         moduleInstance = angular.module('angularModulePrerequisitesSpecModule', []);
+        spyOn(moduleInstance._invokeQueue, 'push').andCallThrough();
+        spyOn(moduleInstance._invokeQueue, 'unshift').andCallThrough();
     });
 
 
@@ -34,73 +22,9 @@ describe('angular.Module', function() {
     describe('"_invokeQueue" property', function() {
 
         it('should exist and initialized as []', function() {
+            expect(moduleInstance._invokeQueue).not.toBeNull();
             expect(angular.isArray(moduleInstance._invokeQueue)).toBe(true);
             expect(moduleInstance._invokeQueue.length).toBe(0);
-        });
-    });
-
-
-
-    describe('"_configBlocks" property' + (angular1_3_or_higher ? ' (introduced in angular 1.3)' : ''), function() {
-
-        it('should exist and initialized as []', function() {
-            if (!angular1_3_or_higher) {
-                return;
-            }
-
-            expect(angular.isArray(moduleInstance._configBlocks)).toBe(true);
-            expect(moduleInstance._configBlocks.length).toBe(0);
-        });
-    });
-
-
-
-    describe('function provided as configFn argument of "angular.module"', function() {
-
-        var configFn;
-        var moduleInstanceWithConfigFnAsArgument;
-
-        beforeEach(function() {
-            configFn = jasmine.createSpy();
-
-            moduleInstanceWithConfigFnAsArgument =
-                angular.module(moduleInstance.name + 'WithConfigFnAsArgument', [], configFn);
-        });
-
-        it('should initially be queued and later invoked when "auto.$injector" is created', function() {
-            var configBlockInvokeQueue = angular1_3_or_higher ? '_configBlocks' : '_invokeQueue';
-
-            expect(moduleInstanceWithConfigFnAsArgument[configBlockInvokeQueue].length).toBe(1);
-            assertInvokeQueueElement(
-                    moduleInstanceWithConfigFnAsArgument[configBlockInvokeQueue][0], '$injector', 'invoke', configFn);
-
-            angular.injector([moduleInstanceWithConfigFnAsArgument.name]);
-
-            expect(configFn).toHaveBeenCalledWith();
-        });
-    });
-
-
-
-    describe('config method', function() {
-
-        var configFn;
-
-        beforeEach(function() {
-            configFn = jasmine.createSpy();
-
-            moduleInstance.config(configFn);
-        });
-
-        it('should initially be queued and later invoked when "auto.$injector" is created', function() {
-            var configBlockInvokeQueue = angular1_3_or_higher ? '_configBlocks' : '_invokeQueue';
-
-            expect(moduleInstance[configBlockInvokeQueue].length).toBe(1);
-            assertInvokeQueueElement(moduleInstance[configBlockInvokeQueue][0], '$injector', 'invoke', configFn);
-
-            angular.injector([moduleInstance.name]);
-
-            expect(configFn).toHaveBeenCalledWith();
         });
     });
 
@@ -159,7 +83,7 @@ describe('angular.Module', function() {
                     moduleInstance.provider('aProviderName', ProviderConstructor);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$provide', 'provider', 'push', 'aProviderName', ProviderConstructor);
+                        '$provide', 'provider', 'push', 'aProviderName', ProviderConstructor);
                     expect(createServiceInstance('aProviderName')).toBe(expectedConstructorServiceInstance);
                 });
 
@@ -225,7 +149,7 @@ describe('angular.Module', function() {
                     moduleInstance.service('aServiceName', ServiceConstructor);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$provide', 'service', 'push', 'aServiceName', ServiceConstructor);
+                        '$provide', 'service', 'push', 'aServiceName', ServiceConstructor);
                     expect(createServiceInstance('aServiceName') instanceof ServiceConstructor).toBe(true);
                 });
 
@@ -255,7 +179,7 @@ describe('angular.Module', function() {
                     moduleInstance.value('aServiceName', expectedServiceInstance);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$provide', 'value', 'push', 'aServiceName', expectedServiceInstance);
+                        '$provide', 'value', 'push', 'aServiceName', expectedServiceInstance);
                     expect(createServiceInstance('aServiceName')).toBe(expectedServiceInstance);
                 });
 
@@ -285,7 +209,7 @@ describe('angular.Module', function() {
                     moduleInstance.constant('aServiceName', expectedServiceInstance);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$provide', 'constant', 'unshift', 'aServiceName', expectedServiceInstance);
+                        '$provide', 'constant', 'unshift', 'aServiceName', expectedServiceInstance);
                     expect(createServiceInstance('aServiceName')).toBe(expectedServiceInstance);
                 });
 
@@ -391,7 +315,7 @@ describe('angular.Module', function() {
                     moduleInstance.controller('NameOfCtrl', ControllerConstructor);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$controllerProvider', 'register', 'push', 'NameOfCtrl', ControllerConstructor);
+                        '$controllerProvider', 'register', 'push', 'NameOfCtrl', ControllerConstructor);
                     expect(createControllerInstance('NameOfCtrl') instanceof ControllerConstructor).toBe(true);
                 });
 
@@ -448,7 +372,7 @@ describe('angular.Module', function() {
                     moduleInstance.directive('aDirective', directiveFactory);
 
                     assertMethodIsQueuedToBeInvokedLater(
-                            '$compileProvider', 'directive', 'push', 'aDirective', directiveFactory);
+                        '$compileProvider', 'directive', 'push', 'aDirective', directiveFactory);
 
                     var element = compileDirective();
                     expect(element.children().eq(0).prop('tagName')).toBe('SPAN');
@@ -487,29 +411,25 @@ describe('angular.Module', function() {
      * @param {string} provider either "$provide" or a name like "...Provider"
      * @param {string} method either a "$provide" method or a configuration method of a "...Provider"
      * @param {string} insertMethod
-     * @param {...*} invocationArguments
+     * @param {(string|Object.<*>)} firstInvokeArgument the first argument of the queued <code>provider[method]</code>
+     *          invocation
+     * @param {(*|Object.<*>)=} secondInvokeArgument the second argument of the queued <code>provider[method]</code>
+     *          invocation
      */
-    function assertMethodIsQueuedToBeInvokedLater(provider, method, insertMethod, invocationArguments) {
-        invocationArguments = Array.prototype.slice.call(arguments, 3);
+    function assertMethodIsQueuedToBeInvokedLater(
+            provider, method, insertMethod, firstInvokeArgument, secondInvokeArgument) {
+        expect(moduleInstance._invokeQueue[insertMethod]).toHaveBeenCalled();
 
         var insertMethodInvokeArg = moduleInstance._invokeQueue[insertMethod].mostRecentCall.args[0];
 
-        /*jshint validthis:true */
-        assertInvokeQueueElement.apply(this, [insertMethodInvokeArg, provider, method].concat(invocationArguments));
+        expect(insertMethodInvokeArg.length).toBe(3);
+        expect(insertMethodInvokeArg[0]).toBe(provider);
+        expect(insertMethodInvokeArg[1]).toBe(method);
+        expect(insertMethodInvokeArg[2].length).toBe(secondInvokeArgument ? 2 : 1);
+        expect(insertMethodInvokeArg[2][0]).toBe(firstInvokeArgument);
+        if (secondInvokeArgument) {
+            expect(insertMethodInvokeArg[2][1]).toBe(secondInvokeArgument);
+        }
     }
 
-    /**
-     * @param {Array.<*>} invokeQueueElement
-     * @param {string} provider either "$provide" or a name like "...Provider"
-     * @param {string} method either a "$provide" method or a configuration method of a "...Provider"
-     * @param {...*} invocationArguments
-     */
-    function assertInvokeQueueElement(invokeQueueElement, provider, method, invocationArguments) {
-        invocationArguments = Array.prototype.slice.call(arguments, 3);
-
-        expect(invokeQueueElement.length).toBe(3);
-        expect(invokeQueueElement[0]).toBe(provider);
-        expect(invokeQueueElement[1]).toBe(method);
-        expect(invokeQueueElement[2]).toEqual(invocationArguments);
-    }
 });

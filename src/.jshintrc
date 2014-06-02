@@ -11,7 +11,7 @@
     "forin":true,
     "noempty": true,
     "quotmark": "single",
-    "maxparams": 5,
+    "maxparams": 4,
     "eqeqeq": true,
     "strict": true,
     "undef": true,

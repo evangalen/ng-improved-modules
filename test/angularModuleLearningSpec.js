@@ -102,22 +102,4 @@ describe('angular.Module', function() {
         });
     });
 
-    it('should not allow a provider declared in the same module to be used in a module config function', function() {
-        angular.module('aModule', [])
-            .config(['myService', angular.noop])
-            .provider('myService', {
-                $get: function() {
-                    return {};
-                }
-            });
-        angular.mock.module('aModule');
-
-        try {
-            inject(['myService', angular.noop]);
-        } catch (e) {
-            expect(e instanceof Error).toBe(true);
-            expect(e.message.indexOf('Unknown provider: myService') !== -1).toBe(true);
-        }
-    });
-
 });
