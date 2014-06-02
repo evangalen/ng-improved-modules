@@ -106,7 +106,7 @@ function moduleIntrospectorServiceFactory(moduleInvokeQueueItemInfoExtractor) {
                     module, '$provide', serviceRegistrationMethodNames, serviceName);
 
             if (!result) {
-                var ngModuleInjector = angular.injector(['ng']);
+                var ngModuleInjector = /** @type {$injector} */ angular.injector(['ng']);
 
                 if (hasService(ngModuleInjector, serviceName)) {
                     result = {module: angular.module('ng')};
@@ -128,7 +128,7 @@ function moduleIntrospectorServiceFactory(moduleInvokeQueueItemInfoExtractor) {
                     module, '$filterProvider', 'register', filterName);
 
             if (!result) {
-                var ngModuleInjector = angular.injector(['ng']);
+                var ngModuleInjector = /** @type {$injector} */ angular.injector(['ng']);
 
                 if (hasService(ngModuleInjector, filterName + 'Filter')) {
                     result = {module: angular.module('ng')};
