@@ -1,5 +1,5 @@
 {
-  "name": "ng-improved-modules",
+  "name": "ng-module-introspector",
   "version": "0.1.0-snapshot",
   "devDependencies": {
     "grunt": "~0.4.4",
