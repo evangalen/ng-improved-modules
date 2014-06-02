@@ -1,7 +1,13 @@
 ;(function() {
 'use strict';
 
-angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor', [function () {
+/**
+ * @ngdoc service
+ * @name ModuleInvokeQueueItemInfoExtractor
+ * @constructor
+ */
+// @ngInject
+function ModuleInvokeQueueItemInfoExtractor() {
 
     var that = this;
 
@@ -84,6 +90,10 @@ angular.module('ngImprovedModules').service('moduleInvokeQueueItemInfoExtractor'
     function isConstantService(providerName, providerMethod) {
         return providerName === '$provide' && providerMethod === 'constant';
     }
-}]);
+}
+
+
+angular.module('ngImprovedModules')
+    .service('moduleInvokeQueueItemInfoExtractor', ModuleInvokeQueueItemInfoExtractor);
 
 }());

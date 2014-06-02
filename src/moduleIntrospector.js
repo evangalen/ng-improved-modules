@@ -4,9 +4,8 @@
 /** @const */
 var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
 
-angular.module('ngImprovedModules').factory('moduleIntrospector', [
-    'moduleInvokeQueueItemInfoExtractor',
-    function(moduleInvokeQueueItemInfoExtractor) {
+// @ngInject
+function moduleIntrospectorServiceFactory(moduleInvokeQueueItemInfoExtractor) {
 
     /**
      * @ngdoc type
@@ -195,6 +194,10 @@ angular.module('ngImprovedModules').factory('moduleIntrospector', [
         return new ModuleIntrospector(module);
     };
 
-}]);
+}
+
+
+angular.module('ngImprovedModules')
+    .factory('moduleIntrospector', moduleIntrospectorServiceFactory);
 
 }());

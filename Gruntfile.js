@@ -4,13 +4,14 @@ module.exports = function(grunt) {
 
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
-        concat: {
+        ngAnnotate: {
             options: {
-                separator: ';'
+                ngAnnotateOptions: {}
             },
-            dist: {
-                src: ['src/**/*.js'],
-                dest: 'dist/<%= pkg.name %>.js'
+            default: {
+                files: {
+                    'dist/<%= pkg.name %>.js': ['src/module.js', 'src/*.js']
+                }
             }
         },
         uglify: {
@@ -19,7 +20,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 files: {
-                    'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
+                    'dist/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js']
                 }
             }
         },
@@ -51,5 +52,5 @@ module.exports = function(grunt) {
 
     grunt.registerTask('test', ['jshint', 'karma']);
 
-    grunt.registerTask('default', ['jshint', 'karma', 'concat', 'uglify']);
+    grunt.registerTask('default', ['jshint', 'karma', 'ngAnnotate', 'uglify']);
 };
