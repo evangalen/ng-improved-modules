@@ -113,6 +113,19 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
 
     describe('findInvokeQueueItemInfoRecursive method', function() {
 
+        /** @const */
+        var originalService = Object.freeze({original: 'service'});
+        /** @const */
+        var overriddenService = Object.freeze({overridden: 'service'});
+
+
+        var anotherModule;
+
+        beforeEach(function() {
+            anotherModule = angular.module('anotherModule', []);
+        });
+
+
         it('should return null for non-overridden service of the (built-in) "ng" module', function() {
             var module = angular.module('aModule', []);
 
@@ -124,13 +137,12 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
 
         it('should return overridden built-in service', function() {
             var module = angular.module('aModule', []);
-
             var $httpOverridden = {};
 
             module.value('$http', $httpOverridden);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
 
             expect(result).toEqual({module: module, providerMethod: 'value', declaration: $httpOverridden});
         });
@@ -138,50 +150,88 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
         it('should return overridden built-in service declared in another module', function() {
             var $httpOverridden = {};
 
-            var anotherModule = angular.module('anotherModule', []);
             anotherModule.value('$http', $httpOverridden);
 
             var module = angular.module('aModule', ['anotherModule']);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], '$http');
 
             expect(result).toEqual({module: anotherModule, providerMethod: 'value', declaration: $httpOverridden});
         });
 
         it('should return overridden service of service originally declared in another module (even a constant ' +
                 'service)', function() {
-            var originalService = {original: 'service'};
-            var overriddenService = {overridden: 'service'};
-
-            var anotherModule = angular.module('anotherModule', []);
             anotherModule.constant('aService', originalService);
 
             var module = angular.module('aModule', ['anotherModule']);
             module.constant('aService', overriddenService);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
 
             expect(result).toEqual({module: module, providerMethod: 'constant', declaration: overriddenService});
         });
 
-        it('should return non overridden non-constant service of constant service originally declared in another ' +
-                'module', function() {
-            var originalService = {original: 'service'};
-            var overriddenService = {overridden: 'service'};
-
-            var anotherModule = angular.module('anotherModule', []);
+        it('should return original constant service declared in another module instead of overridden non-constant ' +
+                'service', function() {
             anotherModule.constant('aService', originalService);
 
             var module = angular.module('aModule', ['anotherModule']);
             module.value('aService', overriddenService);
 
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
-                module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
 
             expect(result).toEqual({module: anotherModule, providerMethod: 'constant', declaration: originalService});
         });
 
+        it('should return overridden constant service that overrides a constant service from another ' +
+                'module', function() {
+            anotherModule.constant('aService', originalService);
+
+            var module = angular.module('aModule', ['anotherModule']);
+            module.constant('aService', overriddenService);
+
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+
+            expect(result).toEqual({module: module, providerMethod: 'constant', declaration: overriddenService});
+        });
+
+        it('should return overridden non-constant service that overrides a non-constant service from another ' +
+                'module', function() {
+            anotherModule.value('aService', originalService);
+
+            var module = angular.module('aModule', ['anotherModule']);
+            module.value('aService', overriddenService);
+
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+
+            expect(result).toEqual({module: module, providerMethod: 'value', declaration: overriddenService});
+        });
+
+        it('should return overridden non-constant service from the same module', function() {
+            var module = angular.module('aModule', []);
+            module.value('aService', originalService);
+            module.value('aService', overriddenService);
+
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+
+            expect(result).toEqual({module: module, providerMethod: 'value', declaration: overriddenService});
+        });
+
+        it('should return original constant service from the same module', function() {
+            var module = angular.module('aModule', []);
+            module.constant('aService', originalService);
+            module.constant('aService', overriddenService);
+
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                    module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
+
+            expect(result).toEqual({module: module, providerMethod: 'constant', declaration: originalService});
+        });
     });
 });
