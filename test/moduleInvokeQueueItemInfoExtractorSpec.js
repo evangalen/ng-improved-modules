@@ -26,7 +26,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.value('aService', service);
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                        currentModule, '$provide', ['value'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['value'], itemName: 'aService'});
 
                 expect(providerDeclaration).toEqual({providerMethod: 'value', declaration: service});
             });
@@ -39,7 +40,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.factory('aService', factoryDeclaration);
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                    currentModule, '$provide', ['value', 'factory'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['value', 'factory'], itemName: 'aService'});
 
                 expect(providerDeclaration).toEqual({providerMethod: 'factory', declaration: factoryDeclaration});
             });
@@ -52,7 +54,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.constant('aService', secondConstantDeclaration);
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                    currentModule, '$provide', ['constant'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['constant'], itemName: 'aService'});
 
                 expect(providerDeclaration)
                     .toEqual({providerMethod: 'constant', declaration: firstConstantDeclaration});
@@ -68,7 +71,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.value({anotherService: {}, aService: service});
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                    currentModule, '$provide', ['value'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['value'], itemName: 'aService'});
 
                 expect(providerDeclaration).toEqual({providerMethod: 'value', declaration: service});
             });
@@ -81,7 +85,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.factory({anotherService2: angular.noop, aService: factoryDeclaration});
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                    currentModule, '$provide', ['value', 'factory'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['value', 'factory'], itemName: 'aService'});
 
                 expect(providerDeclaration).toEqual({providerMethod: 'factory', declaration: factoryDeclaration});
             });
@@ -94,7 +99,8 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
                 currentModule.constant({anotherService2: {}, aService: secondConstantDeclaration});
 
                 var providerDeclaration = moduleInvokeQueueItemInfoExtractor.findProviderDeclarationOnInvokeQueue(
-                    currentModule, '$provide', ['constant'], 'aService');
+                        null, currentModule,
+                        {providerName: '$provide', providerMethods: ['constant'], itemName: 'aService'});
 
                 expect(providerDeclaration)
                     .toEqual({providerMethod: 'constant', declaration: firstConstantDeclaration});
@@ -160,8 +166,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             expect(result).toEqual({module: module, providerMethod: 'constant', declaration: overriddenService});
         });
 
-        //TODO: enable this spec once the TODO has been implemented
-        xit('should return non overridden non-constant service of constant service originally declared in another ' +
+        it('should return non overridden non-constant service of constant service originally declared in another ' +
                 'module', function() {
             var originalService = {original: 'service'};
             var overriddenService = {overridden: 'service'};
@@ -175,7 +180,7 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
             var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
                 module, '$provide', ['provider', 'factory', 'service', 'value', 'constant'], 'aService');
 
-            expect(result).toEqual({module: module, providerMethod: 'constant', declaration: originalService});
+            expect(result).toEqual({module: anotherModule, providerMethod: 'constant', declaration: originalService});
         });
 
     });
