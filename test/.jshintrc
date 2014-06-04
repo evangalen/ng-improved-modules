@@ -34,9 +34,6 @@
         "it": false,
         "spyOn": false,
         "jasmine": false,
-        "expect": false,
-
-        // TODO: remove once the last "xit" has been replaced with an "it"
-        "xit": false
+        "expect": false
     }
 }

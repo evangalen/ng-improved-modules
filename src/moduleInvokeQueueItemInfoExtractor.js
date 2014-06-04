@@ -43,9 +43,6 @@ function ModuleInvokeQueueItemInfoExtractor() {
                     result = resultFromRecursiveInvocation;
                 }
 
-                //TODO: write logic to account for the fact that a non-constant declaration should not be allowed to
-                //  override a earlier constant declaration
-
                 previousResult = result;
             });
 
