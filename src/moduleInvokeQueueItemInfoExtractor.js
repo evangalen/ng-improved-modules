@@ -89,18 +89,20 @@ function ModuleInvokeQueueItemInfoExtractor() {
                         if (isNotConstantServiceOrTryingToOverrideOne(
                                 previousResult, searchParams, currentProviderMethod)) {
                             result = {providerMethod: currentProviderMethod, declaration: invokeLaterArgs[1]};
+
+                            previousResult = result;
                         }
                     }
                 } else if (invokeLaterArgs.length === 1) {
                     if (invokeLaterArgs[0].hasOwnProperty(searchParams.itemName)) {
-                        result = {
-                            providerMethod: currentProviderMethod,
-                            declaration: invokeLaterArgs[0][searchParams.itemName]
-                        };
-
                         if (isNotConstantServiceOrTryingToOverrideOne(
                                 previousResult, searchParams, currentProviderMethod)) {
-                            return result;
+                            result = {
+                                providerMethod: currentProviderMethod,
+                                declaration: invokeLaterArgs[0][searchParams.itemName]
+                            };
+
+                            previousResult = result;
                         }
                     }
                 } else {
