@@ -17,8 +17,6 @@ describe('angular.Module', function() {
         spyOn(moduleInstance._invokeQueue, 'unshift').andCallThrough();
     });
 
-
-
     describe('"_invokeQueue" property', function() {
 
         it('should exist and initialized as []', function() {
