@@ -5,6 +5,9 @@ describe('moduleIntrospector service', function() {
     /** @const */
     var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
 
+    /** @const */
+    var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
+
     var moduleInvokeQueueItemInfoExtractor;
 
     beforeEach(module('ngModuleIntrospector', function($provide) {
@@ -22,12 +25,18 @@ describe('moduleIntrospector service', function() {
     }));
 
     /** @const */
-    var anotherProvider = [function() {
-        return {
-            $get: [function() {
-                return {};
-            }]
-        };
+    var anotherProviderInstance = {};
+
+    /** @const */
+    var anotherProviderProviderInstance = {
+        $get: [function() {
+            return anotherProviderInstance;
+        }]
+    };
+
+    /** @const */
+    var anotherProviderFactory = [function() {
+        return anotherProviderProviderInstance;
     }];
 
     /** @const */
@@ -43,7 +52,7 @@ describe('moduleIntrospector service', function() {
     beforeEach(function() {
         moduleInstance = angular.module('aModule', [])
             .value('anotherService', anotherService)
-            .provider('anotherProvider', anotherProvider);
+            .provider('anotherProvider', anotherProviderFactory);
         moduleIntrospector = moduleIntrospectorFactory('aModule');
         injector = angular.injector(['ng', 'aModule']);
     });
@@ -132,7 +141,7 @@ describe('moduleIntrospector service', function() {
 
         it('should support service registered with the "provider" method with an object', function() {
             var serviceProviderAsObject = {
-                $get: ['anotherService', '$http', function() {
+                $get: ['anotherService', 'anotherProvider', '$http', function() {
                     return {};
                 }]
             };
@@ -148,16 +157,19 @@ describe('moduleIntrospector service', function() {
                 .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
 
             expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
+            expect(Object.getOwnPropertyNames(result).length).toBe(3);
             expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
+            expect(result.anotherProvider).toEqual({module: moduleInstance, instance: anotherProviderInstance});
             expect(result.$http.module).toBe(moduleInstance);
             expect(result.$http.instance).toBe(injector.get('$http'));
         });
 
         it('should support service registered with the "provider" method with an function', function() {
-            var serviceProviderAsFunction = ['anotherProvider', function() {
+            var serviceProviderAsFunction = ['anotherProviderProvider', function(anotherProviderProvider) {
+                expect(anotherProviderProvider).toBe(anotherProviderProviderInstance);
+
                 return {
-                    $get: ['anotherService', '$http', function() {
+                    $get: ['anotherService', 'anotherProvider', '$http', function() {
                         return {};
                     }]
                 };
@@ -174,8 +186,9 @@ describe('moduleIntrospector service', function() {
                 .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
 
             expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
+            expect(Object.getOwnPropertyNames(result).length).toBe(3);
             expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
+            expect(result.anotherProvider).toEqual({module: moduleInstance, instance: anotherProviderInstance});
             expect(result.$http.module).toBe(moduleInstance);
             expect(result.$http.instance).toBe(injector.get('$http'));
         });
@@ -217,7 +230,7 @@ describe('moduleIntrospector service', function() {
             });
 
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$filterProvider', 'register', 'aFilter');
+                .toHaveBeenCalledWith(moduleInstance, '$filterProvider', ['register'], 'aFilter');
         });
     });
 
@@ -257,7 +270,7 @@ describe('moduleIntrospector service', function() {
 
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$filterProvider', 'register', 'aFilter']);
+                .toEqual([moduleInstance, '$filterProvider', ['register'], 'aFilter']);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
                 .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
@@ -299,7 +312,7 @@ describe('moduleIntrospector service', function() {
             });
 
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$controllerProvider', 'register', 'aController');
+                .toHaveBeenCalledWith(moduleInstance, '$controllerProvider', ['register'], 'aController');
         });
     });
 
@@ -331,7 +344,185 @@ describe('moduleIntrospector service', function() {
 
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$controllerProvider', 'register', 'aController']);
+                .toEqual([moduleInstance, '$controllerProvider', ['register'], 'aController']);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
+                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
+                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
+
+            expect(result).toBeDefined();
+            expect(Object.getOwnPropertyNames(result).length).toBe(2);
+            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
+            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
+        });
+    });
+
+
+
+    describe('getDirectiveDeclaration method', function() {
+
+        it('should throw exception for non-existing directive', function() {
+            expect(function() {
+                moduleIntrospector.getDirectiveDeclaration('aNonExistingDirective');
+            }).toThrow('Could not find directive with name: aNonExistingDirective');
+        });
+
+        it('should return declared directive', function() {
+            var directiveLinkFn = jasmine.createSpy();
+
+            var directiveDeclaration = ['anotherService', '$http', function() {
+                return directiveLinkFn;
+            }];
+
+            moduleInstance.directive('aDirective', directiveDeclaration);
+
+            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
+                .andReturn({module: moduleInstance, providerMethod: 'directive', declaration: directiveDeclaration});
+
+            var result = moduleIntrospector.getDirectiveDeclaration('aDirective');
+
+            expect(result).toEqual({
+                module: moduleInstance,
+                providerName: '$compileProvider',
+                providerMethod: 'directive',
+                declaration: directiveDeclaration
+            });
+
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
+                .toHaveBeenCalledWith(moduleInstance, '$compileProvider', ['directive'], 'aDirective');
+        });
+    });
+
+
+
+    describe('getDirectiveDependencies method', function() {
+
+        it('should throw exception for non-existing directive', function() {
+            expect(function() {
+                moduleIntrospector.getDirectiveDependencies(injector, 'aNonExistingDirective');
+            }).toThrow('Could not find directive with name: aNonExistingDirective');
+        });
+
+        it('should return dependencies for directive', function() {
+            var directiveDeclaration = ['anotherService', '$http', angular.noop];
+
+            moduleInstance.directive('aDirective', directiveDeclaration);
+
+            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
+                .andCallFake(function(module, providerName, providerMethods, itemName) {
+                    if (itemName === 'aDirective') {
+                        return {module: module, providerMethod: 'directive', declaration: directiveDeclaration};
+                    } else if (itemName === 'anotherService') {
+                        return {module: module, providerMethod: 'value', declaration: anotherService};
+                    }
+                });
+
+            var result = moduleIntrospector.getDirectiveDependencies(injector, 'aDirective');
+
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
+                .toEqual([moduleInstance, '$compileProvider', ['directive'], 'aDirective']);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
+                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
+                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
+
+            expect(result).toBeDefined();
+            expect(Object.getOwnPropertyNames(result).length).toBe(2);
+            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
+            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
+        });
+    });
+
+
+
+    describe('getAnimationDeclaration method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+
+        it('should throw exception for non-existing animation', function() {
+            if (angular1_0) {
+                return;
+            }
+
+
+            expect(function() {
+                moduleIntrospector.getAnimationDeclaration('aNonExistingAnimation');
+            }).toThrow('Could not find animation with name: aNonExistingAnimation');
+        });
+
+        it('should return declared animation', function() {
+            if (angular1_0) {
+                return;
+            }
+
+
+            var animationDeclaration = ['anotherService', '$http', function() {
+                return {
+                    enter: angular.noop
+                };
+            }];
+
+            moduleInstance.animation('.anAnimation', animationDeclaration);
+
+            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
+                .andReturn({module: moduleInstance, providerMethod: 'register', declaration: animationDeclaration});
+
+            var result = moduleIntrospector.getAnimationDeclaration('.anAnimation');
+
+            expect(result).toEqual({
+                module: moduleInstance,
+                providerName: '$animateProvider',
+                providerMethod: 'register',
+                declaration: animationDeclaration
+            });
+
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
+                .toHaveBeenCalledWith(moduleInstance, '$animateProvider', ['register'], '.anAnimation');
+        });
+    });
+
+
+
+    describe('getAnimationDependencies method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+
+        it('should throw exception for non-existing animation', function() {
+            if (angular1_0) {
+                return;
+            }
+
+
+            expect(function() {
+                moduleIntrospector.getAnimationDependencies(injector, 'aNonExistingAnimation');
+            }).toThrow('Could not find animation with name: aNonExistingAnimation');
+        });
+
+        it('should return dependencies for animation', function() {
+            if (angular1_0) {
+                return;
+            }
+
+
+            var animationDeclaration = ['anotherService', '$http', function() {
+                return {
+                    enter: angular.noop
+                };
+            }];
+
+            moduleInstance.animation('.anAnimation', animationDeclaration);
+
+            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
+                .andCallFake(function(module, providerName, providerMethods, itemName) {
+                    if (itemName === '.anAnimation') {
+                        return {module: module, providerMethod: 'register', declaration: animationDeclaration};
+                    } else if (itemName === 'anotherService') {
+                        return {module: module, providerMethod: 'value', declaration: anotherService};
+                    }
+                });
+
+            var result = moduleIntrospector.getAnimationDependencies(injector, '.anAnimation');
+
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
+            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
+                .toEqual([moduleInstance, '$animateProvider', ['register'], '.anAnimation']);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
                 .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)

@@ -237,5 +237,29 @@ describe('moduleInvokeQueueItemInfoExtractor service', function() {
 
             expect(result).toEqual({module: module, providerMethod: 'constant', declaration: originalService});
         });
+
+        it('should support circular module dependencies', function() {
+            var filterFactory = function() {
+                return function(input) {
+                    return input;
+                };
+            };
+
+            var filterModule = angular.module('appFilters', ['appResources'])
+                .filter('aFilter', filterFactory);
+
+            angular.module('appResources', ['appFilters']);
+
+            var appModule = angular.module('myApp', [
+                'appResources'
+            ]);
+
+            appModule.controller('AppController', ['aFilterFilter', function() {}]);
+
+            var result = moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo(
+                appModule, '$filterProvider', ['register'], 'aFilter');
+
+            expect(result).toEqual({module: filterModule, providerMethod: 'register', declaration: filterFactory});
+        });
     });
 });

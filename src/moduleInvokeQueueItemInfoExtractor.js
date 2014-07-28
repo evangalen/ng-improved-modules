@@ -21,6 +21,9 @@ function ModuleInvokeQueueItemInfoExtractor() {
      */
     this.findInvokeQueueItemInfo = function (module, providerName, providerMethods, itemName) {
 
+        var visitedModules = {};
+
+
         /**
          * @param {?{module: Object, providerMethod: string, declaration: *}} previousResult
          * @param {object} currentModule
@@ -29,21 +32,28 @@ function ModuleInvokeQueueItemInfoExtractor() {
          */
         function findInvokeQueueItemInfoRecursive(previousResult, currentModule, searchParams) {
 
+            visitedModules[currentModule.name] = true;
+
+
             var result = null;
 
             angular.forEach(currentModule.requires, function(nameOfRequiredModule) {
-                var requiredModule = angular.module(nameOfRequiredModule);
+                if (!visitedModules[nameOfRequiredModule]) {
+                    var requiredModule = angular.module(nameOfRequiredModule);
 
-                var resultFromRecursiveInvocation =
-                    findInvokeQueueItemInfoRecursive(previousResult, requiredModule, searchParams);
+                    var resultFromRecursiveInvocation =
+                        findInvokeQueueItemInfoRecursive(previousResult, requiredModule, searchParams);
 
-                if (providerName !== '$provide' || !previousResult || !resultFromRecursiveInvocation ||
+                    if (providerName !== '$provide' || !previousResult || !resultFromRecursiveInvocation ||
                         previousResult.providerMethod !== 'constant' ||
                         resultFromRecursiveInvocation.providerMethod === 'constant') {
-                    result = resultFromRecursiveInvocation;
-                }
+                        result = resultFromRecursiveInvocation;
+                    }
 
-                previousResult = result;
+                    previousResult = result;
+                } else {
+                    result = previousResult;
+                }
             });
 
             var providerDeclarationOnInvokeQueue =
