@@ -89,6 +89,62 @@ describe('moduleIntrospector service', function() {
             expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
                 .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
         });
+
+        describe('should return $get method of "provider" registered service that was registered with', function() {
+
+            it('an object', function() {
+                var $getMethod = ['anotherService', '$http', function() {
+                    return {};
+                }];
+
+                var serviceProviderAsObject = {
+                    $get: $getMethod
+                };
+
+                moduleInstance.provider('aService', serviceProviderAsObject);
+
+                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
+                    .andReturn({module: moduleInstance, providerMethod: 'provider',
+                            declaration: serviceProviderAsObject});
+
+                var result = moduleIntrospector.getServiceDeclaration('aService');
+
+                expect(result).toEqual(
+                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
+                        declaration: $getMethod});
+
+                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
+                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+            });
+
+            it('factory function', function() {
+                var $getMethod = ['anotherService', '$http', function() {
+                    return {};
+                }];
+
+                var serviceProviderAsFunction = ['anotherProviderProvider', function(anotherProviderProvider) {
+                    expect(anotherProviderProvider).toBe(anotherProviderProviderInstance);
+
+                    return {
+                        $get: $getMethod
+                    };
+                }];
+
+                moduleInstance.provider('aService', serviceProviderAsFunction);
+
+                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.andReturn(
+                    {module: moduleInstance, providerMethod: 'provider', declaration: serviceProviderAsFunction});
+
+                var result = moduleIntrospector.getServiceDeclaration('aService');
+
+                expect(result).toEqual(
+                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
+                        declaration: $getMethod});
+
+                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
+                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+            });
+        });
     });
 
 
@@ -141,7 +197,7 @@ describe('moduleIntrospector service', function() {
 
         it('should support service registered with the "provider" method with an object', function() {
             var serviceProviderAsObject = {
-                $get: ['anotherService', 'anotherProvider', '$http', function() {
+                $get: ['anotherService', '$http', function() {
                     return {};
                 }]
             };
@@ -157,9 +213,8 @@ describe('moduleIntrospector service', function() {
                 .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
 
             expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(3);
+            expect(Object.getOwnPropertyNames(result).length).toBe(2);
             expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.anotherProvider).toEqual({module: moduleInstance, instance: anotherProviderInstance});
             expect(result.$http.module).toBe(moduleInstance);
             expect(result.$http.instance).toBe(injector.get('$http'));
         });
@@ -169,7 +224,7 @@ describe('moduleIntrospector service', function() {
                 expect(anotherProviderProvider).toBe(anotherProviderProviderInstance);
 
                 return {
-                    $get: ['anotherService', 'anotherProvider', '$http', function() {
+                    $get: ['anotherService', '$http', function() {
                         return {};
                     }]
                 };
@@ -186,9 +241,8 @@ describe('moduleIntrospector service', function() {
                 .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
 
             expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(3);
+            expect(Object.getOwnPropertyNames(result).length).toBe(2);
             expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.anotherProvider).toEqual({module: moduleInstance, instance: anotherProviderInstance});
             expect(result.$http.module).toBe(moduleInstance);
             expect(result.$http.instance).toBe(injector.get('$http'));
         });
