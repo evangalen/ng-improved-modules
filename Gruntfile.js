@@ -50,6 +50,15 @@ module.exports = function(grunt) {
         },
         build: {
 
+        },
+        coveralls: {
+            options: {
+                debug: true,
+                coverage_dir: 'coverage',
+                dryRun: true,
+                force: true,
+                recursive: true
+            }
         }
     });
 
