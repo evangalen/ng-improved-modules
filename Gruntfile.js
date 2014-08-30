@@ -59,7 +59,9 @@ module.exports = function(grunt) {
         }
     });
 
-    grunt.registerTask('test', ['jshint', 'karma', 'coveralls']);
+    grunt.registerTask('coverage', ['coveralls']);
+
+    grunt.registerTask('test', ['jshint', 'karma']);
 
     grunt.registerTask('default', ['jshint', 'karma', 'ngAnnotate', 'uglify']);
 };
