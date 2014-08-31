@@ -25,17 +25,33 @@ module.exports = function(grunt) {
             }
         },
         karma: {
+            options: {
+                singleRun: true,
+                reporters: ['dots', 'coverage'],
+                preprocessors: {
+                    'src/**/*.js': ['coverage']
+                }
+            },
             angular_1_0: {
                 configFile: 'karma-angular-1.0.conf.js',
-                singleRun: true
+                coverageReporter: {
+                    type: 'lcov',
+                    dir: 'coverage/angular-1.0'
+                }
             },
             angular_1_2: {
                 configFile: 'karma-angular-1.2.conf.js',
-                singleRun: true
+                coverageReporter: {
+                    type: 'lcov',
+                    dir: 'coverage/angular-1.2'
+                }
             },
             angular_1_3_nightly: {
                 configFile: 'karma-angular-1.3-nightly.conf.js',
-                singleRun: true
+                coverageReporter: {
+                    type: 'lcov',
+                    dir: 'coverage/angular-1.3-nightly'
+                }
             }
         },
         jshint: {
