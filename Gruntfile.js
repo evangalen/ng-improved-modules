@@ -68,14 +68,13 @@ module.exports = function(grunt) {
 
         },
         coveralls: {
-            options: {
-                debug: true,
-                coverage_dir: 'coverage'
+            'upload-combined-coverage': {
+                src: 'coverage/combined-lcov.info'
             }
         }
     });
 
-    grunt.registerTask('coverage', ['coveralls']);
+    grunt.registerTask('upload-combined-coverage', ['coveralls:upload-combined-coverage']);
 
     grunt.registerTask('test', ['jshint', 'karma']);
 
