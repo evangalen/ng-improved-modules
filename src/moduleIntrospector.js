@@ -193,7 +193,7 @@ function moduleIntrospectorServiceFactory(moduleInvokeQueueItemInfoExtractor) {
                 return providerDeclaration.$get;
             } else {
                 var providerProbingModuleName =
-                    'generatedPoviderProbingModule#' + numberOfBuildProviderProbingModules;
+                    'generatedProviderProbingModule#' + numberOfBuildProviderProbingModules;
 
                 var providerInstance = null;
 
