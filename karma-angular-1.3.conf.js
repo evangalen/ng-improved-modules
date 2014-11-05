@@ -7,8 +7,8 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'bower_components/angular-1.3-nightly/angular.js',
-            'bower_components/angular-mocks-1.3-nightly/angular-mocks.js',
+            'bower_components/angular-1.3/angular.js',
+            'bower_components/angular-mocks-1.3/angular-mocks.js',
             'src/**/module.js',
             'src/**/*.js',
             'test/**/*.js'
