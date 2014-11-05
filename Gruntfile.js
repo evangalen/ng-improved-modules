@@ -46,11 +46,11 @@ module.exports = function(grunt) {
                     dir: 'coverage/angular-1.2'
                 }
             },
-            angular_1_3_nightly: {
+            angular_1_3: {
                 configFile: 'karma-angular-1.3.conf.js',
                 coverageReporter: {
                     type: 'lcov',
-                    dir: 'coverage/angular-1.3-nightly'
+                    dir: 'coverage/angular-1.3'
                 }
             }
         },
