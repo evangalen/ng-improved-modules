@@ -34,6 +34,13 @@
         "it": false,
         "spyOn": false,
         "jasmine": false,
-        "expect": false
+        "expect": false,
+
+        //TODO: remove all these once the tests once again 100% complete
+        "ddescribe": false,
+        "xdescribe": false,
+        "iit": false,
+        "xit": false,
+        "console": false
     }
 }

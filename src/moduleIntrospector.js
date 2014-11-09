@@ -5,7 +5,7 @@
 var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
 
 
-var numberOfBuildProviderProbingModules = 0;
+//var numberOfBuildProviderProbingModules = 0;
 
 
 
@@ -20,38 +20,39 @@ function moduleIntrospectorServiceFactory() {
     function ModuleIntrospector(moduleNames) {
         moduleNames = Array.prototype.slice.call(arguments, 0);
 
-        /**
-         * @param {string} providerName
-         * @returns {{$get: Function|Array.<string|Function>}}
-         */
-        function resolveProviderInstanceForAngular1_0(providerName) {
-            var providerDeclaration = getComponentDeclaration('$provide', providerName);
-
-            if (angular.isObject(providerDeclaration.rawDeclaration) &&
-                    !angular.isArray(providerDeclaration.rawDeclaration)) {
-                return providerDeclaration.rawDeclaration;
-            } else {
-                var providerProbingModuleName =
-                    'generatedProviderProbingModule#' + numberOfBuildProviderProbingModules;
-
-                var providerInstance = null;
-
-                angular.module(providerProbingModuleName, moduleNames)
-                    .config([providerName, function(_providerInstance_) {
-                        providerInstance = _providerInstance_;
-                    }]);
-
-                angular.injector(['ng', providerProbingModuleName]);
-
-                return providerInstance;
-            }
-        }
+//        /**
+//         * @param {string} providerName
+//         * @returns {{$get: Function|Array.<string|Function>}}
+//         */
+//        function resolveProviderInstanceForAngular1_0(providerName) {
+//            var providerDeclaration = getComponentDeclaration('$provide', providerName);
+//
+//            if (angular.isObject(providerDeclaration.rawDeclaration) &&
+//                    !angular.isArray(providerDeclaration.rawDeclaration)) {
+//                return providerDeclaration.rawDeclaration;
+//            } else {
+//                var providerProbingModuleName =
+//                    'generatedProviderProbingModule#' + numberOfBuildProviderProbingModules;
+//
+//                var providerInstance = null;
+//
+//                angular.module(providerProbingModuleName, moduleNames)
+//                    .config([providerName, function(_providerInstance_) {
+//                        providerInstance = _providerInstance_;
+//                    }]);
+//
+//                angular.injector(['ng', providerProbingModuleName]);
+//
+//                return providerInstance;
+//            }
+//        }
 
         /**
          * @param {string} providerName
          * @returns {{$get: Function|Array.<string|Function>}}
          */
         function resolveProviderInstance(providerName) {
+            //TODO: try to get it to work with Angular 1.0.x otherwise remove Angular 1.0.x support
 //            if (angular1_0) {
 //                return resolveProviderInstanceForAngular1_0(providerName).$get;
 //            } else {
@@ -68,32 +69,23 @@ function moduleIntrospectorServiceFactory() {
 //        var afterMethodExecutionRunning = false;
 
         /**
-         * @param {object} object
+         * @param {object} providerInstance
          * @param {string} methodName
          * @param {Function} afterMethodLogic
          */
-        function afterMethodExecution(object, methodName, afterMethodLogic) {
-            var originalMethod = object[methodName];
+        function afterProviderMethodExecution(providerInstance, methodName, afterMethodLogic) {
+            var originalMethod = providerInstance[methodName];
 
-            object[methodName] = function() {
+            providerInstance[methodName] = function() {
                 var result = originalMethod.apply(this, arguments);
 
-//                if (!afterMethodExecutionRunning) {
-//                    try {
-//                        afterMethodExecutionRunning = true;
-
-                        if (angular.isObject(arguments[0])) {
-                            angular.forEach(arguments[0], function(rawDeclaration, componentName) {
-                                afterMethodLogic(componentName, rawDeclaration);
-                            });
-                        } else {
-                            afterMethodLogic.apply(this, arguments);
-                        }
-
-//                    } finally {
-//                        afterMethodExecutionRunning = false;
-//                    }
-//                }
+                if (angular.isObject(arguments[0])) {
+                    angular.forEach(arguments[0], function(rawDeclaration, componentName) {
+                        afterMethodLogic(componentName, rawDeclaration, result);
+                    });
+                } else {
+                    afterMethodLogic(arguments[0], arguments[1], result);
+                }
 
                 return result;
             };
@@ -187,10 +179,10 @@ function moduleIntrospectorServiceFactory() {
 
 
         var registrationMethodPerProvider = {
-            $filter: 'register',
-            $controller: 'register',
-            $compile: 'directive',
-            $animate: 'register'
+            $filterProvider: 'register',
+            $controllerProvider: 'register',
+            $compileProvider: 'directive',
+            $animateProvider: 'register'
         };
 
 
@@ -200,10 +192,9 @@ function moduleIntrospectorServiceFactory() {
 
         if (!angular1_0) {
             angular.injector(
-                [function($injector) {
+                [function ($injector) {
                     providerInjector = $injector;
-                }, 'ng']
-                    .concat(moduleNames));
+                }, 'ng'].concat(moduleNames));
         }
 
 
@@ -222,17 +213,17 @@ function moduleIntrospectorServiceFactory() {
             var registerService = angular.bind(undefined, registerComponent, '$provide');
 
 
-            afterMethodExecution($provide, 'constant', function(/** string */ name, value) {
+            afterProviderMethodExecution($provide, 'constant', function(/** string */ name, value) {
                 registerService('constant', name, value, value, []);
             });
 
-            afterMethodExecution($provide, 'value', function(/** string */ name, value) {
+            afterProviderMethodExecution($provide, 'value', function(/** string */ name, value) {
                 if (!existingConstantService(name)) {
                     registerService('value', name, value, value, []);
                 }
             });
 
-            afterMethodExecution($provide, 'service', function(
+            afterProviderMethodExecution($provide, 'service', function(
                     /** string */ name,
                     /** Function|Array.<string|Function> */ service) {
                 if (!existingConstantService(name)) {
@@ -241,7 +232,7 @@ function moduleIntrospectorServiceFactory() {
                 }
             });
 
-            afterMethodExecution($provide, 'factory', function(
+            afterProviderMethodExecution($provide, 'factory', function(
                     /** string */ name,
                     /** Function|Array.<string|Function> */ getFn) {
                 if (!existingConstantService(name)) {
@@ -250,25 +241,30 @@ function moduleIntrospectorServiceFactory() {
                 }
             });
 
-            afterMethodExecution($provide, 'provider', function(
+            afterProviderMethodExecution($provide, 'provider', function(
                     /** string */ name,
-                    /** {$get: Function|Array.<string|Function>}|Function|Array.<string|Function> */ provider) {
+                    /** {$get: Function|Array.<string|Function>}|Function|Array.<string|Function> */ provider,
+                    /** {$get: Function|Array.<string|Function>} */ providerMethodResult) {
                 if (existingConstantService(name)) {
                     return;
                 }
 
-                var providerInstance = resolveProviderInstance(name + 'Provider');
+                var providerName = name + 'Provider';
+
+                //NOTE: turns out that when invokes with a object (instead of name + value) no result is returned
+                var providerInstance = providerMethodResult || resolveProviderInstance(providerName);
 
                 registerService('provider', name, providerInstance.$get,
-                    stripAnnotations(providerInstance.$get), determineInjectedServices(providerInstance.$get));
+                        stripAnnotations(providerInstance.$get), determineInjectedServices(providerInstance.$get));
 
-                var registrationMethodOfProvider = registrationMethodPerProvider[name];
+
+                var registrationMethodOfProvider = registrationMethodPerProvider[providerName];
                 if (registrationMethodOfProvider) {
 
-                    afterMethodExecution(providerInstance, registrationMethodOfProvider, function(
+                    afterProviderMethodExecution(providerInstance, registrationMethodOfProvider, function(
                             /** string */ name,
                             /** Function|Array.<string|Function> */ rawDeclaration) {
-                        registerComponent(provider + 'Provider', registrationMethodOfProvider, name, rawDeclaration,
+                        registerComponent(providerName, registrationMethodOfProvider, name, rawDeclaration,
                                 stripAnnotations(rawDeclaration), determineInjectedServices(rawDeclaration));
                     });
                 }

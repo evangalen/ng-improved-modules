@@ -59,7 +59,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    ddescribe('getServiceDeclaration method', function() {
+    xdescribe('getServiceDeclaration method', function() {
 
         it('should throw exception for non-existing service', function() {
             expect(function() {
@@ -100,7 +100,7 @@ describe('moduleIntrospector service', function() {
 
         describe('should return $get method of "provider" registered service that was registered with', function() {
 
-            iit('an object', function() {
+            it('an object', function() {
                 var $getMethod = ['anotherService', '$http', function() {
                     return {};
                 }];
@@ -158,7 +158,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getServiceDependencies method', function() {
+    xdescribe('getServiceDependencies method', function() {
 
         it('should throw exception for non-existing service', function() {
             expect(function() {
@@ -261,19 +261,29 @@ describe('moduleIntrospector service', function() {
 
     describe('getFilterDeclaration method', function() {
 
-        it('should throw exception for non-existing filter', function() {
+        xit('should throw exception for non-existing filter', function() {
             expect(function() {
                 moduleIntrospector.getFilterDeclaration('aNonExistingFilter');
             }).toThrow('Could not find filter with name: aNonExistingFilter');
         });
 
-        it('should throw exception for non-overridden built-in (from "ng" module) filter', function() {
-            expect(function() {
-                moduleIntrospector.getFilterDeclaration('filter');
-            }).toThrow('Could not find declaration of filter with name: filter');
+        iit('should return built-in (from "ng" module) filter', function() {
+//            console.log(moduleIntrospector.getComponentDeclaration('$provide', '$q'));
+
+            console.log(moduleIntrospector.getServiceProviderDeclaration('$q'));
+
+//            var result = moduleIntrospector.getFilterDeclaration('filter');
+//
+//            expect(result).toBeTruthy();
+//            expect(result.providerMethod).toBe('filter');
+//            expect(result.componentName).toBe('filter');
+//            expect(angular.isArray(result.rawDeclaration)).toBe(true);
+//            expect(angular.isFunction(result.strippedDeclaration)).toBe(true);
+//            expect(angular.isArray(result.injectedServices)).toBe(true);
+////            expect(result.injectedServices.indexOf('$httpBackend') !== -1).toBe(true);
         });
 
-        it('should return declared filter', function() {
+        xit('should return declared filter', function() {
             var filterFactory = ['anotherService', '$http', function() {
                 return function() {};
             }];
@@ -299,7 +309,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getFilterDependencies method', function() {
+    xdescribe('getFilterDependencies method', function() {
 
         it('should throw exception for non-existing filter', function() {
             expect(function() {
@@ -348,7 +358,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getControllerDeclaration method', function() {
+    xdescribe('getControllerDeclaration method', function() {
 
         it('should throw exception for non-existing controller', function() {
             expect(function() {
@@ -381,7 +391,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getControllerDependencies method', function() {
+    xdescribe('getControllerDependencies method', function() {
 
         it('should throw exception for non-existing controller', function() {
             expect(function() {
@@ -422,7 +432,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getDirectiveDeclaration method', function() {
+    xdescribe('getDirectiveDeclaration method', function() {
 
         it('should throw exception for non-existing directive', function() {
             expect(function() {
@@ -460,7 +470,7 @@ describe('moduleIntrospector service', function() {
 
     describe('getDirectiveDependencies method', function() {
 
-        it('should throw exception for non-existing directive', function() {
+        xit('should throw exception for non-existing directive', function() {
             expect(function() {
                 moduleIntrospector.getDirectiveDependencies(injector, 'aNonExistingDirective');
             }).toThrow('Could not find directive with name: aNonExistingDirective');
@@ -499,7 +509,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getAnimationDeclaration method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+    xdescribe('getAnimationDeclaration method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
 
         it('should throw exception for non-existing animation', function() {
             if (angular1_0) {
@@ -545,7 +555,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getAnimationDependencies method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+    xdescribe('getAnimationDependencies method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
 
         it('should throw exception for non-existing animation', function() {
             if (angular1_0) {

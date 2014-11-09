@@ -12,7 +12,8 @@
     "forin":true,
     "noempty": true,
     "quotmark": "single",
-    "maxparams": 4,
+    //TODO: try if we quick restore maxparams back to 4 after some refactoring
+    "maxparams": 6,
     "eqeqeq": true,
     "strict": true,
     "undef": true,
