@@ -1,13 +1,6 @@
 ;(function() {
 'use strict';
 
-/** @const */
-var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
-
-
-var numberOfBuildProviderProbingModules = 0;
-
-
 
 // @ngInject
 function moduleIntrospectorServiceFactory() {
@@ -19,51 +12,6 @@ function moduleIntrospectorServiceFactory() {
      */
     function ModuleIntrospector(moduleNames) {
         moduleNames = Array.prototype.slice.call(arguments, 0);
-
-        /**
-         * @param {string} providerName
-         * @returns {{$get: Function|Array.<string|Function>}}
-         */
-        function resolveProviderInstanceForAngular1_0(providerName) {
-            var providerDeclaration = getComponentDeclaration('$provide', providerName);
-
-            if (angular.isObject(providerDeclaration.rawDeclaration) &&
-                    !angular.isArray(providerDeclaration.rawDeclaration)) {
-                return providerDeclaration.rawDeclaration;
-            } else {
-                var providerProbingModuleName =
-                    'generatedProviderProbingModule#' + numberOfBuildProviderProbingModules;
-
-                var providerInstance = null;
-
-                angular.module(providerProbingModuleName, moduleNames)
-                    .config([providerName, function(_providerInstance_) {
-                        providerInstance = _providerInstance_;
-                    }]);
-
-                angular.injector(['ng', providerProbingModuleName]);
-
-                return providerInstance;
-            }
-        }
-
-        /**
-         * @param {string} providerName
-         * @returns {{$get: Function|Array.<string|Function>}}
-         */
-        function resolveProviderInstance(providerName) {
-            if (angular1_0) {
-                return resolveProviderInstanceForAngular1_0(providerName);
-            } else {
-                var providerInstance = providerInjector.get(providerName);
-
-                if (!providerInstance) {
-                    throw 'Could not find provider declaration for: ' + providerName;
-                }
-
-                return providerInstance;
-            }
-        }
 
         /**
          * @param {object} providerInstance
@@ -191,14 +139,6 @@ function moduleIntrospectorServiceFactory() {
 
         var providerInjector = null;
 
-//        if (!angular1_0) {
-//            angular.injector(
-//                [function ($injector) {
-//                    providerInjector = $injector;
-//                }, 'ng'].concat(moduleNames));
-//        }
-
-
         var $provideAnnotatedHookFn = ['$provide', function($provide) {
             function existingConstantService(serviceName) {
                 var registeredServices = registeredComponentsPerProviderName.$provide;
@@ -259,7 +199,7 @@ function moduleIntrospectorServiceFactory() {
 
 
                 //NOTE: turns out that when invokes with a object (instead of name + value) no result is returned
-                var providerInstance = providerMethodResult || resolveProviderInstance(providerName);
+                var providerInstance = providerMethodResult || providerInjector.get(providerName);
 
 
                 registerService('provider', name, providerInstance.$get,
@@ -268,7 +208,6 @@ function moduleIntrospectorServiceFactory() {
 
                 var registrationMethodOfProvider = registrationMethodPerProvider[providerName];
                 if (registrationMethodOfProvider) {
-
                     afterProviderMethodExecution(providerInstance, registrationMethodOfProvider, function(
                             /** string */ name,
                             /** Function|Array.<string|Function> */ rawDeclaration) {
@@ -372,20 +311,18 @@ function moduleIntrospectorServiceFactory() {
             return this.getComponentDeclaration('$compileProvider', directiveName);
         };
 
-        if (!angular1_0) {
-            /**
-             * @param {string} animationName
-             * @returns {{
-             *      componentName: string,
-             *      rawDeclaration: *,
-             *      strippedDeclaration: *,
-             *      injectedServices: Array.<string>
-             *  }}
-             */
-            this.getAnimationDeclaration = function (animationName) {
-                return this.getComponentDeclaration('$animateProvider', animationName);
-            };
-        }
+        /**
+         * @param {string} animationName
+         * @returns {{
+         *      componentName: string,
+         *      rawDeclaration: *,
+         *      strippedDeclaration: *,
+         *      injectedServices: Array.<string>
+         *  }}
+         */
+        this.getAnimationDeclaration = function (animationName) {
+            return this.getComponentDeclaration('$animateProvider', animationName);
+        };
     }
 
 

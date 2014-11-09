@@ -1,10 +1,6 @@
 ddescribe('moduleIntrospector service', function() {
     'use strict';
 
-    /** @const */
-    var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
-
-
     beforeEach(module('ngModuleIntrospector'));
 
 
@@ -33,12 +29,8 @@ ddescribe('moduleIntrospector service', function() {
     /** @const */
     var anotherService = {};
 
-//    /** @const */
-//    var ngModule = angular.module('ng');
-
     var moduleInstance;
     var moduleIntrospector;
-//    var injector;
 
     beforeEach(function() {
         moduleInstance = angular.module('aModule', [])
@@ -255,25 +247,15 @@ ddescribe('moduleIntrospector service', function() {
 
 
 
-    describe('getAnimationDeclaration method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
+    describe('getAnimationDeclaration method', function() {
 
         it('should throw exception for non-existing animation', function() {
-            if (angular1_0) {
-                return;
-            }
-
-
             expect(function() {
                 moduleIntrospector.getAnimationDeclaration('aNonExistingAnimation');
             }).toThrow('Could not find registered component "aNonExistingAnimation" for provider: $animateProvider');
         });
 
         it('should return declared animation', function() {
-            if (angular1_0) {
-                return;
-            }
-
-
             var animationDeclaration = ['anotherService', '$http', function() {
                 return {
                     enter: angular.noop
