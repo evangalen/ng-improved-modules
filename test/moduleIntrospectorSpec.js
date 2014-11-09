@@ -10,13 +10,7 @@ describe('moduleIntrospector service', function() {
 
     var moduleInvokeQueueItemInfoExtractor;
 
-    beforeEach(module('ngModuleIntrospector', function($provide) {
-        moduleInvokeQueueItemInfoExtractor = {
-            findInvokeQueueItemInfo: jasmine.createSpy()
-        };
-
-        $provide.value('moduleInvokeQueueItemInfoExtractor', moduleInvokeQueueItemInfoExtractor);
-    }));
+    beforeEach(module('ngModuleIntrospector'));
 
     var moduleIntrospectorFactory;
 
@@ -59,7 +53,7 @@ describe('moduleIntrospector service', function() {
 
 
 
-    xdescribe('getServiceDeclaration method', function() {
+    ddescribe('getServiceDeclaration method', function() {
 
         it('should throw exception for non-existing service', function() {
             expect(function() {
@@ -267,20 +261,16 @@ describe('moduleIntrospector service', function() {
             }).toThrow('Could not find filter with name: aNonExistingFilter');
         });
 
-        iit('should return built-in (from "ng" module) filter', function() {
-//            console.log(moduleIntrospector.getComponentDeclaration('$provide', '$q'));
+        xit('should return built-in (from "ng" module) filter', function() {
+            var result = moduleIntrospector.getFilterDeclaration('filter');
 
-            console.log(moduleIntrospector.getServiceProviderDeclaration('$q'));
-
-//            var result = moduleIntrospector.getFilterDeclaration('filter');
-//
-//            expect(result).toBeTruthy();
-//            expect(result.providerMethod).toBe('filter');
-//            expect(result.componentName).toBe('filter');
-//            expect(angular.isArray(result.rawDeclaration)).toBe(true);
-//            expect(angular.isFunction(result.strippedDeclaration)).toBe(true);
-//            expect(angular.isArray(result.injectedServices)).toBe(true);
-////            expect(result.injectedServices.indexOf('$httpBackend') !== -1).toBe(true);
+            expect(result).toBeTruthy();
+            expect(result.providerMethod).toBe('filter');
+            expect(result.componentName).toBe('filter');
+            expect(angular.isArray(result.rawDeclaration)).toBe(true);
+            expect(angular.isFunction(result.strippedDeclaration)).toBe(true);
+            expect(angular.isArray(result.injectedServices)).toBe(true);
+//            expect(result.injectedServices.indexOf('$httpBackend') !== -1).toBe(true);
         });
 
         xit('should return declared filter', function() {

@@ -32,14 +32,13 @@ module.exports = function(grunt) {
                     'src/**/*.js': ['coverage']
                 }
             },
-            //TODO: try to get it to work with Angular 1.0.x otherwise remove Angular 1.0.x support
-//            angular_1_0: {
-//                configFile: 'karma-angular-1.0.conf.js',
-//                coverageReporter: {
-//                    type: 'lcov',
-//                    dir: 'coverage/angular-1.0'
-//                }
-//            },
+            angular_1_0: {
+                configFile: 'karma-angular-1.0.conf.js',
+                coverageReporter: {
+                    type: 'lcov',
+                    dir: 'coverage/angular-1.0'
+                }
+            },
             angular_1_2: {
                 configFile: 'karma-angular-1.2.conf.js',
                 coverageReporter: {
