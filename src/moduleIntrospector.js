@@ -191,12 +191,12 @@ function moduleIntrospectorServiceFactory() {
 
         var providerInjector = null;
 
-        if (!angular1_0) {
-            angular.injector(
-                [function ($injector) {
-                    providerInjector = $injector;
-                }, 'ng'].concat(moduleNames));
-        }
+//        if (!angular1_0) {
+//            angular.injector(
+//                [function ($injector) {
+//                    providerInjector = $injector;
+//                }, 'ng'].concat(moduleNames));
+//        }
 
 
         var $provideAnnotatedHookFn = ['$provide', function($provide) {
@@ -279,7 +279,9 @@ function moduleIntrospectorServiceFactory() {
             });
         }];
 
-        angular.injector([$provideAnnotatedHookFn, 'ng'].concat(moduleNames));
+        angular.injector([function ($injector) {
+                providerInjector = $injector;
+            }, $provideAnnotatedHookFn, 'ng'].concat(moduleNames));
 
 
         /**
