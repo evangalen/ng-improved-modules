@@ -54,23 +54,29 @@ describe('moduleIntrospector service', function() {
             .value('anotherService', anotherService)
             .provider('anotherProvider', anotherProviderFactory);
         moduleIntrospector = moduleIntrospectorFactory('aModule');
-        injector = angular.injector(['ng', 'aModule']);
+//        injector = angular.injector(['ng', 'aModule']);
     });
 
 
 
-    describe('getServiceDeclaration method', function() {
+    ddescribe('getServiceDeclaration method', function() {
 
         it('should throw exception for non-existing service', function() {
             expect(function() {
                 moduleIntrospector.getServiceDeclaration('aNonExistingService');
-            }).toThrow('Could not find service with name: aNonExistingService');
+            }).toThrow('Could not find registered component "aNonExistingService" for provider: $provide');
         });
 
-        it('should throw exception for non-overridden built-in (from "ng" module) service', function() {
-            expect(function() {
-                moduleIntrospector.getServiceDeclaration('$http');
-            }).toThrow('Could not find declaration of service with name: $http');
+        it('should return built-in (from "ng" module) service', function() {
+            var result = moduleIntrospector.getServiceDeclaration('$http');
+
+            expect(result).toBeTruthy();
+            expect(result.providerMethod).toBe('provider');
+            expect(result.componentName).toBe('$http');
+            expect(angular.isArray(result.rawDeclaration)).toBe(true);
+            expect(angular.isFunction(result.strippedDeclaration)).toBe(true);
+            expect(angular.isArray(result.injectedServices)).toBe(true);
+            expect(result.injectedServices.indexOf('$httpBackend') !== -1).toBe(true);
         });
 
         it('should return declared service', function() {
@@ -78,21 +84,23 @@ describe('moduleIntrospector service', function() {
 
             moduleInstance.value('aService', service);
 
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'value', declaration: service});
+            moduleIntrospector = moduleIntrospectorFactory('aModule');
 
             var result = moduleIntrospector.getServiceDeclaration('aService');
 
             expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'value', declaration: service});
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+                {
+                    providerMethod: 'value',
+                    componentName: 'aService',
+                    rawDeclaration: {a: 'service'},
+                    strippedDeclaration: { a: 'service'},
+                    injectedServices: []
+                });
         });
 
         describe('should return $get method of "provider" registered service that was registered with', function() {
 
-            it('an object', function() {
+            iit('an object', function() {
                 var $getMethod = ['anotherService', '$http', function() {
                     return {};
                 }];
@@ -103,18 +111,18 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.provider('aService', serviceProviderAsObject);
 
-                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                    .andReturn({module: moduleInstance, providerMethod: 'provider',
-                            declaration: serviceProviderAsObject});
+                moduleIntrospector = moduleIntrospectorFactory('aModule');
 
                 var result = moduleIntrospector.getServiceDeclaration('aService');
 
                 expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
-                        declaration: $getMethod});
-
-                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+                    {
+                        providerMethod: 'provider',
+                        componentName: 'aService',
+                        rawDeclaration: $getMethod,
+                        strippedDeclaration : $getMethod[$getMethod.length - 1],
+                        injectedServices: ['anotherService', '$http']
+                    });
             });
 
             it('factory function', function() {
@@ -132,17 +140,18 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.provider('aService', serviceProviderAsFunction);
 
-                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.andReturn(
-                    {module: moduleInstance, providerMethod: 'provider', declaration: serviceProviderAsFunction});
+                moduleIntrospector = moduleIntrospectorFactory('aModule');
 
                 var result = moduleIntrospector.getServiceDeclaration('aService');
 
                 expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
-                        declaration: $getMethod});
-
-                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+                    {
+                        providerMethod: 'provider',
+                        componentName: 'aService',
+                        rawDeclaration: $getMethod,
+                        strippedDeclaration : $getMethod[$getMethod.length - 1],
+                        injectedServices: ['anotherService', '$http']
+                    });
             });
         });
     });
