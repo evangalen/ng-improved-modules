@@ -1,4 +1,4 @@
-ddescribe('moduleIntrospector service', function() {
+describe('moduleIntrospector service', function() {
     'use strict';
 
     beforeEach(module('ngModuleIntrospector'));
@@ -75,7 +75,7 @@ ddescribe('moduleIntrospector service', function() {
                     providerMethod: 'value',
                     componentName: 'aService',
                     rawDeclaration: {a: 'service'},
-                    strippedDeclaration: { a: 'service'},
+                    strippedDeclaration: {a: 'service'},
                     injectedServices: []
                 });
         });
@@ -148,16 +148,16 @@ ddescribe('moduleIntrospector service', function() {
             }).toThrow('Could not find registered component "aNonExistingFilter" for provider: $filterProvider');
         });
 
-        xit('should return built-in (from "ng" module) filter', function() {
-            var result = moduleIntrospector.getFilterDeclaration('filter');
+        it('should return built-in (from "ng" module) filter', function() {
+            var result = moduleIntrospector.getFilterDeclaration('currency');
 
             expect(result).toBeTruthy();
-            expect(result.providerMethod).toBe('filter');
-            expect(result.componentName).toBe('filter');
-            expect(angular.isArray(result.rawDeclaration)).toBe(true);
-            expect(angular.isFunction(result.strippedDeclaration)).toBe(true);
-            expect(angular.isArray(result.injectedServices)).toBe(true);
-////            expect(result.injectedServices.indexOf('$httpBackend') !== -1).toBe(true);
+            expect(result.providerMethod).toBe('register');
+            expect(result.componentName).toBe('currency');
+            expect(angular.isFunction(result.rawDeclaration)).toBe(true);
+            expect(result.rawDeclaration.$inject).toEqual(['$locale']);
+            expect(result.strippedDeclaration).toBe(result.rawDeclaration);
+            expect(result.injectedServices).toEqual(['$locale']);
         });
 
         it('should return declared filter', function() {
