@@ -1,5 +1,6 @@
+'use strict';
+
 describe('moduleIntrospector service', function() {
-    'use strict';
 
     beforeEach(module('ngModuleIntrospector'));
 

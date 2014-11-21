@@ -1,6 +1,6 @@
-describe('angular.Module', function() {
-    'use strict';
+'use strict';
 
+describe('angular.Module', function() {
     /** @const */
     var originalService = Object.freeze({original: 'service'});
 
