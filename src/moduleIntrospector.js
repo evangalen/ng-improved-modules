@@ -1,8 +1,19 @@
-;(function() {
-    'use strict';
+'use strict';
+
+/**
+ * @typedef {(Function|Array.<(string|Function)>)} PossiblyAnnotatedFn
+ */
+
+/**
+ * @typedef {({$get: Function|Array.<(string|Function)>}|Function|Array.<(string|Function)>)} RawServiceProviderDeclaration
+ */
+
+/**
+ * @typedef {({$get: Function|Array.<(string|Function)>}|Function)} StrippedServiceProviderDeclaration
+ */
 
 
-    /**
+/**
  * @ngdoc type
  * @param {...string} moduleNames
  * @constructor
@@ -13,12 +24,10 @@ function ModuleIntrospector(moduleNames) {
     /**
      * @param {object} providerInstance
      * @param {string} methodName
-     * @param {function(string, *)} beforeMethodLogic
      * @param {function(string, *)} afterMethodLogic
      */
-    function aroundProviderMethodExecution(providerInstance, methodName, beforeMethodLogic, afterMethodLogic) {
-        return aroundExecution(
-                providerInstance, methodName, supportObject(beforeMethodLogic), supportObject(afterMethodLogic));
+    function afterProviderMethodExecution(providerInstance, methodName, afterMethodLogic) {
+        return afterExecution(providerInstance, methodName, supportObject(afterMethodLogic));
     }
 
     /**
@@ -38,26 +47,14 @@ function ModuleIntrospector(moduleNames) {
     }
 
     /**
-     * @param {object} providerInstance
-     * @param {string} methodName
-     * @param {function(string, *)} afterMethodLogic
-     */
-    function afterProviderMethodExecution(providerInstance, methodName, afterMethodLogic) {
-        return aroundProviderMethodExecution(providerInstance, methodName, angular.noop, afterMethodLogic);
-    }
-
-    /**
      * @param {object} object
      * @param {string} methodName
-     * @param {Function} beforeMethodLogic
      * @param {Function} afterMethodLogic
      */
-    function aroundExecution(object, methodName, beforeMethodLogic, afterMethodLogic) {
+    function afterExecution(object, methodName, afterMethodLogic) {
         var originalMethod = object[methodName];
 
         object[methodName] = function() {
-            beforeMethodLogic.apply(this, arguments);
-
             var result = originalMethod.apply(this, arguments);
 
             afterMethodLogic.apply(this, arguments);
@@ -67,7 +64,7 @@ function ModuleIntrospector(moduleNames) {
     }
 
     /**
-     * @param {Function|Array.<(string|Function)>} possibleAnnotatedFn
+     * @param {PossiblyAnnotatedFn} possibleAnnotatedFn
      * @returns {Function}
      */
     function stripAnnotations(possibleAnnotatedFn) {
@@ -79,8 +76,8 @@ function ModuleIntrospector(moduleNames) {
     }
 
     /**
-     * @param {Function|Array.<(string|Function)>} possibleAnnotatedFn
-     * @returns {Array.<string>}
+     * @param {PossiblyAnnotatedFn} possibleAnnotatedFn
+     * @returns {string[]}
      */
     function determineInjectedServices(possibleAnnotatedFn) {
         if (angular.isFunction) {
@@ -96,7 +93,7 @@ function ModuleIntrospector(moduleNames) {
      * @param {string} componentName
      * @param {*} rawDeclaration
      * @param {*} strippedDeclaration
-     * @param {Array.<string>} injectedServices
+     * @param {string[]} injectedServices
      */
     function registerComponent(
             providerName, providerMethod, componentName, rawDeclaration, strippedDeclaration, injectedServices) {
@@ -123,7 +120,7 @@ function ModuleIntrospector(moduleNames) {
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      injectedServices: string[]
      *  }}
      */
     function getComponentDeclaration(providerName, componentName) {
@@ -137,6 +134,10 @@ function ModuleIntrospector(moduleNames) {
         return registeredComponent;
     }
 
+    /**
+     * @param {string} serviceName
+     * @returns {boolean}
+     */
     function existingConstantService(serviceName) {
         var registeredServices = registeredComponentsPerProviderName.$provide;
         if (!registeredServices) {
@@ -149,9 +150,9 @@ function ModuleIntrospector(moduleNames) {
 
     /**
      * @param {string} serviceProviderName
-     * @param {{$get: Function|Array.<(string|Function)>}|Function|Array.<(string|Function)>} rawDeclaration
-     * @param {{$get: Function|Array.<(string|Function)>}|Function} strippedDeclaration
-     * @param {Array.<string>} injectedServices
+     * @param {RawServiceProviderDeclaration} rawDeclaration
+     * @param {StrippedServiceProviderDeclaration} strippedDeclaration
+     * @param {string[]} injectedServices
      */
     function registerServiceProviderDeclaration(
             serviceProviderName, rawDeclaration, strippedDeclaration, injectedServices) {
@@ -160,6 +161,29 @@ function ModuleIntrospector(moduleNames) {
                 strippedDeclaration: strippedDeclaration,
                 injectedServices: injectedServices
             };
+    }
+
+    function registerBuiltInFilters($FilterProvider) {
+        var $provideCapturingFactoryInvocations = {
+            factory: function(name, getFn) {
+                var suffix = 'Filter';
+
+                var endsWithFilterSuffix = name.indexOf(suffix, name.length - suffix.length) !== -1;
+                if (!endsWithFilterSuffix) {
+                    throw 'Unexpected registered factory: ' + name;
+                }
+
+                var providerName = '$filterProvider';
+                var filterProviderRegistrationMethodName = registrationMethodPerProvider[providerName];
+                var nameWithoutSuffix = name.substring(0, name.length - suffix.length);
+
+                registerComponent(providerName, filterProviderRegistrationMethodName, nameWithoutSuffix, getFn,
+                    stripAnnotations(getFn), determineInjectedServices(getFn));
+            }
+        };
+
+
+        emptyInjector.instantiate($FilterProvider, {$provide: $provideCapturingFactoryInvocations});
     }
 
 
@@ -171,23 +195,21 @@ function ModuleIntrospector(moduleNames) {
      *          componentName: string,
      *          rawDeclaration: *,
      *          strippedDeclaration: *,
-     *          injectedServices: Array.<string>
+     *          injectedServices: string[]
      *      }>
      *  >}
      */
     var registeredComponentsPerProviderName = {};
 
-
     /**
-      * @type {{
-      *     serviceProviderName: string,
-      *     rawDeclaration: {$get: Function|Array.<(string|Function)>}|Function|Array.<(string|Function)>,
-      *     strippedDeclaration: {$get: Function|Array.<(string|Function)>}|Function,
-      *     injectedServices: Array.<string>
-      * }}
-     */
+      * @type {
+      *  Object.<{
+      *     rawDeclaration: RawServiceProviderDeclaration,
+      *     strippedDeclaration: StrippedServiceProviderDeclaration,
+      *     injectedServices: string[]
+      *  }>}
+      */
     var serviceProviderDeclarationPerProviderName = {};
-
 
     var registrationMethodPerProvider = {
         $filterProvider: 'register',
@@ -196,10 +218,10 @@ function ModuleIntrospector(moduleNames) {
         $animateProvider: 'register'
     };
 
-
     var emptyInjector = angular.injector([]);
 
     var providerInjector = null;
+
 
     /** @ngInject */
     var providerInjectorCapturingConfigFn = function ($injector) {
@@ -208,6 +230,7 @@ function ModuleIntrospector(moduleNames) {
 
     /** @ngInject */
     var $provideMethodsHookConfigFn = function($provide) {
+
         var registerService = angular.bind(undefined, registerComponent, '$provide');
 
 
@@ -221,25 +244,21 @@ function ModuleIntrospector(moduleNames) {
             }
         });
 
-        afterProviderMethodExecution($provide, 'service', function(
-                /** string */ name, /** Function|Array.<(string|Function)> */ service) {
+        afterProviderMethodExecution($provide, 'service', function(/** string */ name, /** PossiblyAnnotatedFn */ service) {
             if (!existingConstantService(name)) {
                 registerService('service', name,
                     service, stripAnnotations(service), determineInjectedServices(service));
             }
         });
 
-        afterProviderMethodExecution($provide, 'factory', function(
-                /** string */ name, /** Function|Array.<(string|Function)> */ getFn) {
+        afterProviderMethodExecution($provide, 'factory', function(/** string */ name, /** PossiblyAnnotatedFn */ getFn) {
             if (!existingConstantService(name)) {
                 registerService('factory', name,
                     getFn, stripAnnotations(getFn), determineInjectedServices(getFn));
             }
         });
 
-        afterProviderMethodExecution($provide, 'provider', function(
-                /** string */ name,
-                /** {$get: Function|Array.<(string|Function)>}|Function|Array.<(string|Function)> */ provider) {
+        afterProviderMethodExecution($provide, 'provider', function(/** string */ name, /** RawServiceProviderDeclaration */ provider) {
             if (existingConstantService(name)) {
                 return;
             }
@@ -259,25 +278,7 @@ function ModuleIntrospector(moduleNames) {
                     stripAnnotations(providerInstance.$get), determineInjectedServices(providerInstance.$get));
 
             if (name === '$filter') {
-                var $provideCapturingFactoryInvocations = {
-                    factory: function(name, getFn) {
-                        var suffix = 'Filter';
-
-                        var endsWithFilterSuffix = name.indexOf(suffix, name.length - suffix.length) !== -1;
-                        if (!endsWithFilterSuffix) {
-                            throw 'Unexpected registered factory: ' + name;
-                        }
-
-                        var filterProviderRegistrationMethodName = registrationMethodPerProvider[providerName];
-                        var nameWithoutSuffix = name.substring(0, name.length - suffix.length);
-
-                        registerComponent(providerName, filterProviderRegistrationMethodName, nameWithoutSuffix, getFn,
-                                stripAnnotations(getFn), determineInjectedServices(getFn));
-                    }
-                };
-
-
-                emptyInjector.instantiate(provider, {$provide: $provideCapturingFactoryInvocations});
+                registerBuiltInFilters(provider);
             }
 
 
@@ -285,7 +286,7 @@ function ModuleIntrospector(moduleNames) {
             if (registrationMethodOfProvider) {
                 afterProviderMethodExecution(providerInstance, registrationMethodOfProvider, function(
                         /** string */ name,
-                        /** Function|Array.<string|Function> */ rawDeclaration) {
+                        /** Function|Array.<(string|Function)> */ rawDeclaration) {
                     registerComponent(providerName, registrationMethodOfProvider, name, rawDeclaration,
                             stripAnnotations(rawDeclaration), determineInjectedServices(rawDeclaration));
                 });
@@ -307,7 +308,7 @@ function ModuleIntrospector(moduleNames) {
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      injectedServices: string[]
      *  }}
      */
     this.getComponentDeclaration = function(providerName, componentName) {
@@ -320,7 +321,7 @@ function ModuleIntrospector(moduleNames) {
      *      serviceProviderName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      injectedServices: string[]
      *  }}
      */
     this.getServiceProviderDeclaration = function(serviceProviderName) {
@@ -341,7 +342,7 @@ function ModuleIntrospector(moduleNames) {
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      injectedServices: string[]
      *  }}
      */
     this.getServiceDeclaration = function(serviceName) {
@@ -352,9 +353,9 @@ function ModuleIntrospector(moduleNames) {
      * @param {string} filterName
      * @returns {{
      *      componentName: string,
-     *      rawDeclaration: Function|Array.<(string|Function)>,
+     *      rawDeclaration: PossiblyAnnotatedFn,
      *      strippedDeclaration: Function,
-     *      injectedServices: Array.<string>
+     *      injectedServices: string[]
      *  }}
      */
     this.getFilterDeclaration = function(filterName) {
@@ -365,9 +366,9 @@ function ModuleIntrospector(moduleNames) {
      * @param {string} controllerName
      * @returns {{
      *      componentName: string,
-     *      rawDeclaration: *,
-     *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      rawDeclaration: PossiblyAnnotatedFn,
+     *      strippedDeclaration: Function,
+     *      injectedServices: string[]
      *  }}
      */
     this.getControllerDeclaration = function(controllerName) {
@@ -378,9 +379,9 @@ function ModuleIntrospector(moduleNames) {
      * @param {string} directiveName
      * @returns {{
      *      componentName: string,
-     *      rawDeclaration: *,
-     *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      rawDeclaration: PossiblyAnnotatedFn,
+     *      strippedDeclaration: Function,
+     *      injectedServices: string[]
      *  }}
      */
     this.getDirectiveDeclaration = function(directiveName) {
@@ -391,9 +392,9 @@ function ModuleIntrospector(moduleNames) {
      * @param {string} animationName
      * @returns {{
      *      componentName: string,
-     *      rawDeclaration: *,
-     *      strippedDeclaration: *,
-     *      injectedServices: Array.<string>
+     *      rawDeclaration: PossiblyAnnotatedFn,
+     *      strippedDeclaration: Function,
+     *      injectedServices: string[]
      *  }}
      */
     this.getAnimationDeclaration = function (animationName) {
@@ -416,4 +417,3 @@ angular.module('ngModuleIntrospector')
             return new ModuleIntrospector(module);
         };
     });
-}());
