@@ -36,7 +36,7 @@ This AngularJS module consists of only one service and one type:
 Changes
 -------
 0.2.0
- - AngularJS 1.0.x is no longer dropped
+ - AngularJS 1.0.x is no longer supported
  - no longer uses any internal AngularJS API (like 0.1.x did)
  - the public API of `ModuleIntrospector` type had been drastically changed
  - declararations of built-in ("ng" module) provider components (i.e. the "currency" filter) and built-in providers      (i.e. $filterProvider) can now be retrieved using ngModuleIntrospector
