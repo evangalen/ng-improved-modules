@@ -35,9 +35,18 @@ This AngularJS module consists of only one service and one type:
 
 Changes
 -------
- - 0.2.0:
-    - support for AngularJS 1.0.x is dropped
-    - no longer depends of any internal AngularJS API (like 0.1.x did)
-    - declararations of built-in ("ng" module) provider components (i.e. the "currency" filter) and built-in providers      (i.e. $filterProvider) can now be retrieved using ngModuleIntrospector
- - 0.1.2 - 0.1.0
-    - see changes of 0.1.0 - 0.1.2 of [ngImprovedTesting](https://github.com/evangalen/ng-improved-testing/)
+0.2.0
+ - AngularJS 1.0.x is no longer dropped
+ - no longer uses any internal AngularJS API (like 0.1.x did)
+ - the public API of `ModuleIntrospector` type had been drastically changed
+ - declararations of built-in ("ng" module) provider components (i.e. the "currency" filter) and built-in providers      (i.e. $filterProvider) can now be retrieved using ngModuleIntrospector
+
+0.1.2
+ - added support for AngularJS 1.0.x (as well as the latest stable 1.3)
+ - Support for "provider" registered services
+ - Support for retrieving $animateProvider components (when using AngularJS 1.2+)
+
+0.1.1
+ - Fixes [ngImprovedTesting](https://github.com/evangalen/ng-improved-testing/) issue #1 (Error on circular module dependencies.)
+
+0.1.0 Initial release
