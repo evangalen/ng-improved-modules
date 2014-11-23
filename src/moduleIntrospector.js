@@ -315,11 +315,11 @@ angular.module('ngModuleIntrospector')
         /**
          * @ngdoc service
          * @name moduleIntrospector
-         * @param {string} module
+         * @param {...string} modules
          * @returns {ModuleIntrospector}
          * @function
          */
-        return function moduleIntrospector(module) {
-            return new ModuleIntrospector(module);
+        return function moduleIntrospector(modules) {
+            return new ModuleIntrospector(modules);
         };
     });
