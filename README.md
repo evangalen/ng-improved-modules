@@ -35,9 +35,9 @@ This AngularJS module consists of only one service and one type:
 
 Changes
 -------
-0.2.0:
- - support for AngularJS 1.0.x is dropped
- - no longer depends of any internal AngularJS API (like 0.1.x did)
- - declararations of built-in ("ng" module) provider components (i.e. the "currency" filter) and built-in providers      (i.e. $filterProvider) can now be retrieved using ngModuleIntrospector
-0.1.2 - 0.1.0
- - see changes of 0.1.0 - 0.1.2 of [ngImprovedTesting](https://github.com/evangalen/ng-improved-testing/)
+ - 0.2.0:
+    - support for AngularJS 1.0.x is dropped
+    - no longer depends of any internal AngularJS API (like 0.1.x did)
+    - declararations of built-in ("ng" module) provider components (i.e. the "currency" filter) and built-in providers      (i.e. $filterProvider) can now be retrieved using ngModuleIntrospector
+ - 0.1.2 - 0.1.0
+    - see changes of 0.1.0 - 0.1.2 of [ngImprovedTesting](https://github.com/evangalen/ng-improved-testing/)
