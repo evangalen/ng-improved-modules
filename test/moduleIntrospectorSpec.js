@@ -1,22 +1,9 @@
+'use strict';
+
 describe('moduleIntrospector service', function() {
-    'use strict';
 
-    //TODO: remove once "module.prefix" + "module.suffix" is used
-    /** @const */
-    var serviceRegistrationMethodNames = ['provider', 'factory', 'service', 'value', 'constant'];
+    beforeEach(module('ngModuleIntrospector'));
 
-    /** @const */
-    var angular1_0 = angular.version.full.indexOf('1.0.') === 0;
-
-    var moduleInvokeQueueItemInfoExtractor;
-
-    beforeEach(module('ngModuleIntrospector', function($provide) {
-        moduleInvokeQueueItemInfoExtractor = {
-            findInvokeQueueItemInfo: jasmine.createSpy()
-        };
-
-        $provide.value('moduleInvokeQueueItemInfoExtractor', moduleInvokeQueueItemInfoExtractor);
-    }));
 
     var moduleIntrospectorFactory;
 
@@ -24,569 +11,1032 @@ describe('moduleIntrospector service', function() {
         moduleIntrospectorFactory = _moduleIntrospector_;
     }));
 
-    /** @const */
-    var anotherProviderInstance = {};
+
+    var moduleInstance;
+    var anotherModuleInstance;
+
+    beforeEach(function() {
+        anotherModuleInstance = angular.module('anotherModule', []);
+        moduleInstance = angular.module('aModule', ['anotherModule']);
+    });
 
     /** @const */
-    var anotherProviderProviderInstance = {
-        $get: [function() {
-            return anotherProviderInstance;
-        }]
+    var originalValue = Object.freeze({original: 'service'});
+
+    /** @const */
+    var overriddenValue = Object.freeze({overridden: 'service'});
+
+    /** @const */
+    var originalService = function() {
+        return originalValue;
     };
 
     /** @const */
-    var anotherProviderFactory = [function() {
-        return anotherProviderProviderInstance;
-    }];
+    var overriddenService = Object.freeze(
+            ['aService1', 'aService2', function(aService1, aService2) { //jshint unused:false
+                return overriddenValue;
+            }]);
 
     /** @const */
-    var anotherService = {};
+    var originalFactory = function() {
+        return originalValue;
+    };
 
     /** @const */
-    var ngModule = angular.module('ng');
+    var overriddenFactory = Object.freeze(
+            ['aService1', 'aService2', function(aService1, aService2) { //jshint unused:false
+                return overriddenValue;
+            }]);
 
-    var moduleInstance;
-    var moduleIntrospector;
-    var injector;
+    /** @const */
+    var originalProvider$GetFn = Object.freeze(
+            ['aService1', 'aService2', function(aService1, aService2) { //jshint unused:false
+                return originalValue;
+            }]);
 
-    beforeEach(function() {
-        moduleInstance = angular.module('aModule', [])
-            .value('anotherService', anotherService)
-            .provider('anotherProvider', anotherProviderFactory);
-        moduleIntrospector = moduleIntrospectorFactory('aModule');
-        injector = angular.injector(['ng', 'aModule']);
+    /** @const */
+    var originalProviderObject = Object.freeze({
+        $get: originalProvider$GetFn
     });
 
+    /** @const */
+    var originalProviderConstructor = Object.freeze(
+            ['$provide', '$compileProvider', function($provide, $compileProvider) { //jshint unused:false
+                angular.extend(this, originalProviderObject);
+            }]);
+
+    /** @const */
+    var overriddenProvider$GetFn = Object.freeze(
+            ['aService1', 'aService2', function(aService1, aService2) { //jshint unused:false
+                return originalValue;
+            }]);
+
+    /** @const */
+    var overriddenProviderObject = Object.freeze({
+        $get: overriddenProvider$GetFn
+    });
+
+    /** @const */
+    var overriddenProviderConstructor = Object.freeze(
+            ['$provide', '$compileProvider', function($provide, $compileProvider) { //jshint unused:false
+                angular.extend(this, overriddenProviderObject);
+            }]);
 
 
-    describe('getServiceDeclaration method', function() {
 
-        it('should throw exception for non-existing service', function() {
+    describe('getProviderComponentDeclaration method', function() {
+
+        it('should throw exception for unknown provider name', function() {
             expect(function() {
-                moduleIntrospector.getServiceDeclaration('aNonExistingService');
-            }).toThrow('Could not find service with name: aNonExistingService');
+                moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('anUnknownProvider', 'aComponentName');
+            }).toThrow('Could not find registered component "aComponentName" for provider: anUnknownProvider');
         });
 
-        it('should throw exception for non-overridden built-in (from "ng" module) service', function() {
-            expect(function() {
-                moduleIntrospector.getServiceDeclaration('$http');
-            }).toThrow('Could not find declaration of service with name: $http');
-        });
 
-        it('should return declared service', function() {
-            var service = {a: 'service'};
+        describe('for $provide', function() {
 
-            moduleInstance.value('aService', service);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'value', declaration: service});
-
-            var result = moduleIntrospector.getServiceDeclaration('aService');
-
-            expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'value', declaration: service});
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
-        });
-
-        describe('should return $get method of "provider" registered service that was registered with', function() {
-
-            it('an object', function() {
-                var $getMethod = ['anotherService', '$http', function() {
-                    return {};
-                }];
-
-                var serviceProviderAsObject = {
-                    $get: $getMethod
-                };
-
-                moduleInstance.provider('aService', serviceProviderAsObject);
-
-                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                    .andReturn({module: moduleInstance, providerMethod: 'provider',
-                            declaration: serviceProviderAsObject});
-
-                var result = moduleIntrospector.getServiceDeclaration('aService');
-
-                expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
-                        declaration: $getMethod});
-
-                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+            it('should throw an exception for a non existing service', function() {
+                expect(function() {
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'nonExistingService');
+                }).toThrow('Could not find registered component "nonExistingService" for provider: $provide');
             });
 
-            it('factory function', function() {
-                var $getMethod = ['anotherService', '$http', function() {
-                    return {};
+            describe('constant component', function() {
+                var expectedRawDeclaration;
+
+                it('should return first registered constant in the same module', function() {
+                    moduleInstance
+                        .constant('aService', originalValue)
+                        .constant('aService', overriddenValue);
+
+                    expectedRawDeclaration = originalValue;
+                });
+
+                it('should return overridden constant instead of original constant from another module', function() {
+                    anotherModuleInstance
+                        .constant('aService', originalValue);
+                    moduleInstance
+                        .constant('aService', overriddenValue);
+
+                    expectedRawDeclaration = overriddenValue;
+                });
+
+                afterEach(function() {
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+
+                    expect(result).toBeTruthy();
+                    expect(result.providerMethod).toBe('constant');
+                    expect(result.componentName).toBe('aService');
+                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.strippedDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.injectedServices).toEqual([]);
+                });
+
+            });
+
+
+            describe('value component', function() {
+                var expectedProviderMethod;
+                var expectedRawDeclaration;
+
+                beforeEach(function() {
+                    expectedProviderMethod = 'value';
+                });
+
+
+                describe('should return constant', function() {
+                    beforeEach(function() {
+                        expectedProviderMethod = 'constant';
+                    });
+
+                    it('instead of original value in the same module', function() {
+                        moduleInstance
+                            .value('aService', originalValue)
+                            .constant('aService', overriddenValue);
+
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    it('instead of overridden value in the same module', function() {
+                        moduleInstance
+                            .constant('aService', originalValue)
+                            .value('aService', overriddenValue);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('from another module instead of value', function() {
+                        anotherModuleInstance.constant('aService', originalValue);
+                        moduleInstance.value('aService', overriddenValue);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+                });
+
+
+                describe('should allow overriding', function() {
+                    beforeEach(function() {
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    afterEach(function() {
+                        moduleInstance.value('aService', overriddenValue);
+                    });
+
+
+                    describe('from another module', function() {
+                        it('a value', function() {
+                            anotherModuleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            anotherModuleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            anotherModuleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            anotherModuleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            anotherModuleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+
+                    describe('from the same module', function() {
+                        it('a value', function() {
+                            moduleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            moduleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            moduleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            moduleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            moduleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+                });
+
+                afterEach(function() {
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+
+                    expect(result).toBeTruthy();
+                    expect(result.providerMethod).toBe(expectedProviderMethod);
+                    expect(result.componentName).toBe('aService');
+                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.strippedDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.injectedServices).toEqual([]);
+                });
+
+            });
+
+
+            describe('service component', function() {
+                var expectedProviderMethod;
+                var expectedRawDeclaration;
+                var expectedStrippedDeclaration;
+                var expectedInjectedServices;
+
+                beforeEach(function() {
+                    expectedProviderMethod = 'service';
+                });
+
+
+                describe('should return constant', function() {
+                    beforeEach(function() {
+                        expectedProviderMethod = 'constant';
+                    });
+
+                    it('instead of original value in the same module', function() {
+                        moduleInstance
+                            .service('aService', originalService)
+                            .constant('aService', overriddenValue);
+
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    it('instead of overridden value in the same module', function() {
+                        moduleInstance
+                            .constant('aService', originalValue)
+                            .service('aService', overriddenService);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('from another module instead of value', function() {
+                        anotherModuleInstance.constant('aService', originalValue);
+                        moduleInstance.service('aService', overriddenService);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+                });
+
+                describe('should allow overriding', function() {
+                    beforeEach(function() {
+                        expectedRawDeclaration = overriddenService;
+                        expectedStrippedDeclaration = overriddenService[overriddenService.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+
+                    afterEach(function() {
+                        moduleInstance.service('aService', overriddenService);
+                    });
+
+
+                    describe('from another module', function() {
+                        it('a value', function() {
+                            anotherModuleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            anotherModuleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            anotherModuleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            anotherModuleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            anotherModuleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+
+                    describe('from the same module', function() {
+                        it('a value', function() {
+                            moduleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            moduleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            moduleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            moduleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            moduleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+                });
+
+
+
+                afterEach(function() {
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+
+                    expect(result).toBeTruthy();
+                    expect(result.providerMethod).toBe(expectedProviderMethod);
+                    expect(result.componentName).toBe('aService');
+                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                });
+
+            });
+
+
+            describe('factory component', function() {
+                var expectedProviderMethod;
+                var expectedRawDeclaration;
+                var expectedStrippedDeclaration;
+                var expectedInjectedServices;
+
+                beforeEach(function() {
+                    expectedProviderMethod = 'factory';
+                });
+
+
+                describe('should return constant', function() {
+                    beforeEach(function() {
+                        expectedProviderMethod = 'constant';
+                    });
+
+                    it('instead of original value in the same module', function() {
+                        moduleInstance
+                            .factory('aService', originalFactory)
+                            .constant('aService', overriddenValue);
+
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    it('instead of overridden value in the same module', function() {
+                        moduleInstance
+                            .constant('aService', originalValue)
+                            .factory('aService', overriddenFactory);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('from another module instead of value', function() {
+                        anotherModuleInstance.constant('aService', originalValue);
+                        moduleInstance.factory('aService', overriddenFactory);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+                });
+
+
+                describe('should allow overriding', function() {
+                    beforeEach(function() {
+                        expectedRawDeclaration = overriddenFactory;
+                        expectedStrippedDeclaration = overriddenFactory[overriddenFactory.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+
+                    afterEach(function() {
+                        moduleInstance.factory('aService', overriddenFactory);
+                    });
+
+
+                    describe('from another module', function() {
+                        it('a value', function() {
+                            anotherModuleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            anotherModuleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            anotherModuleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            anotherModuleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            anotherModuleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+
+                    describe('from the same module', function() {
+                        it('a value', function() {
+                            moduleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            moduleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            moduleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            moduleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            moduleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+                });
+
+
+                afterEach(function() {
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+
+                    expect(result).toBeTruthy();
+                    expect(result.providerMethod).toBe(expectedProviderMethod);
+                    expect(result.componentName).toBe('aService');
+                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                });
+
+            });
+
+
+            describe('provider component', function() {
+                var expectedProviderMethod;
+                var expectedComponentName;
+                var expectedRawDeclaration;
+                var expectedStrippedDeclaration;
+                var expectedInjectedServices;
+
+                beforeEach(function() {
+                    expectedProviderMethod = 'provider';
+                    expectedComponentName = 'aService';
+                });
+
+
+                describe('should return constant', function() {
+                    beforeEach(function() {
+                        expectedProviderMethod = 'constant';
+                    });
+
+                    it('instead of original provider object in the same module', function() {
+                        moduleInstance
+                            .provider('aService', originalProviderObject)
+                            .constant('aService', overriddenValue);
+
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    it('instead of original provider constructor in the same module', function() {
+                        moduleInstance
+                            .provider('aService', originalProviderConstructor)
+                            .constant('aService', overriddenValue);
+
+                        expectedRawDeclaration = overriddenValue;
+                    });
+
+                    it('instead of overridden provider object in the same module', function() {
+                        moduleInstance
+                            .constant('aService', originalValue)
+                            .provider('aService', overriddenProviderObject);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('instead of overridden provider object in the same module', function() {
+                        moduleInstance
+                            .constant('aService', originalValue)
+                            .provider('aService', overriddenProviderConstructor);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('from another module instead of provider object', function() {
+                        anotherModuleInstance.constant('aService', originalValue);
+                        moduleInstance.factory('aService', overriddenProviderObject);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+
+                    it('from another module instead of provider constructor', function() {
+                        anotherModuleInstance.constant('aService', originalValue);
+                        moduleInstance.factory('aService', overriddenProviderConstructor);
+
+                        expectedRawDeclaration = originalValue;
+                    });
+                });
+
+
+                describe('a provider object should allow overriding', function() {
+                    beforeEach(function() {
+                        expectedRawDeclaration = overriddenProvider$GetFn;
+                        expectedStrippedDeclaration = overriddenProvider$GetFn[overriddenProvider$GetFn.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+
+                    afterEach(function() {
+                        moduleInstance.provider('aService', overriddenProviderObject);
+                    });
+
+
+                    describe('from another module', function() {
+                        it('a value', function() {
+                            anotherModuleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            anotherModuleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            anotherModuleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            anotherModuleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            anotherModuleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+
+                    describe('from the same module', function() {
+                        it('a value', function() {
+                            moduleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            moduleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            moduleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            moduleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            moduleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+                });
+
+                describe('a provider constructor should allow overriding', function() {
+                    beforeEach(function() {
+                        expectedRawDeclaration = overriddenProvider$GetFn;
+                        expectedStrippedDeclaration = overriddenProvider$GetFn[overriddenProvider$GetFn.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+
+                    afterEach(function() {
+                        moduleInstance.provider('aService', overriddenProviderConstructor);
+                    });
+
+
+                    describe('from another module', function() {
+                        it('a value', function() {
+                            anotherModuleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            anotherModuleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            anotherModuleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            anotherModuleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            anotherModuleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+
+                    describe('from the same module', function() {
+                        it('a value', function() {
+                            moduleInstance.value('aService', originalValue);
+                        });
+
+                        it('a service', function() {
+                            moduleInstance.service('aService', originalService);
+                        });
+
+                        it('a factory', function() {
+                            moduleInstance.factory('aService', originalFactory);
+                        });
+
+                        it('a provider object', function() {
+                            moduleInstance.provider('aService', originalProviderObject);
+                        });
+
+                        it('a provider constructor', function() {
+                            moduleInstance.provider('aService', originalProviderConstructor);
+                        });
+                    });
+                });
+
+                it('should property handle a non-annotated provider constructor', function() {
+                    moduleInstance.provider('aService', function() {
+                        this.$get = originalProvider$GetFn[originalProvider$GetFn.length - 1];
+                    });
+
+                    expectedRawDeclaration = originalProvider$GetFn[originalProvider$GetFn.length - 1];
+                    expectedStrippedDeclaration = originalProvider$GetFn[originalProvider$GetFn.length - 1];
+                    expectedInjectedServices = ['aService1', 'aService2'];
+                });
+
+                describe('should properly handle multiple registered providers', function() {
+                    beforeEach(function() {
+                        moduleInstance.provider({
+                            aService: originalProviderObject,
+                            anotherService: overriddenProviderConstructor
+                        });
+                    });
+
+                    it('and register the first', function() {
+                        expectedRawDeclaration = originalProvider$GetFn;
+                        expectedStrippedDeclaration = originalProvider$GetFn[originalProvider$GetFn.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+
+                    it('and register the second', function() {
+                        expectedComponentName = 'anotherService';
+                        expectedRawDeclaration = overriddenProvider$GetFn;
+                        expectedStrippedDeclaration = overriddenProvider$GetFn[overriddenProvider$GetFn.length - 1];
+                        expectedInjectedServices = ['aService1', 'aService2'];
+                    });
+                });
+
+
+                afterEach(function() {
+                    var result =
+                        moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', expectedComponentName);
+
+                    expect(result).toBeTruthy();
+                    expect(result.providerMethod).toBe(expectedProviderMethod);
+                    expect(result.componentName).toBe(expectedComponentName);
+                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                });
+
+            });
+
+
+        });
+
+
+        describe('for $filterProvider', function() {
+            it('should throw exception for non-existing filter', function() {
+                expect(function() {
+                    moduleIntrospectorFactory('aModule')
+                        .getProviderComponentDeclaration('$filterProvider', 'aNonExistingFilter');
+                }).toThrow('Could not find registered component "aNonExistingFilter" for provider: $filterProvider');
+            });
+
+            it('should return built-in (from "ng" module) filter', function() {
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$filterProvider', 'currency');
+
+                expect(result).toBeTruthy();
+                expect(result.providerMethod).toBe('register');
+                expect(result.componentName).toBe('currency');
+                expect(angular.isFunction(result.rawDeclaration)).toBe(true);
+                expect(result.rawDeclaration.$inject).toEqual(['$locale']);
+                expect(result.strippedDeclaration).toBe(result.rawDeclaration);
+                expect(result.injectedServices).toEqual(['$locale']);
+            });
+
+            it('should return declared filter', function() {
+                var filterFactory = ['anotherService', '$http', function() {
+                    return function() {};
                 }];
 
-                var serviceProviderAsFunction = ['anotherProviderProvider', function(anotherProviderProvider) {
-                    expect(anotherProviderProvider).toBe(anotherProviderProviderInstance);
+                moduleInstance.filter('aFilter', filterFactory);
 
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$filterProvider', 'aFilter');
+
+                expect(result).toEqual({
+                    providerMethod: 'register',
+                    componentName: 'aFilter',
+                    rawDeclaration: filterFactory,
+                    strippedDeclaration: filterFactory[2],
+                    injectedServices: filterFactory.slice(0, 2)
+                });
+            });
+        });
+
+
+        describe('for $controllerProvider', function() {
+
+            it('should throw exception for non-existing controller', function() {
+                expect(function() {
+                    moduleIntrospectorFactory('aModule')
+                        .getProviderComponentDeclaration('$controllerProvider', 'aNonExistingController');
+                }).toThrow('Could not find registered component "aNonExistingController" for provider: ' +
+                        '$controllerProvider');
+            });
+
+            it('should return declared controller', function() {
+                var controllerConstructor = ['anotherService', '$http', function() {
+                }];
+
+                moduleInstance.controller('aController', controllerConstructor);
+
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$controllerProvider', 'aController');
+
+                expect(result).toEqual({
+                    providerMethod: 'register',
+                    componentName: 'aController',
+                    rawDeclaration: controllerConstructor,
+                    strippedDeclaration: controllerConstructor[2],
+                    injectedServices: controllerConstructor.slice(0, 2)
+                });
+            });
+        });
+
+
+        describe('for $compileProvider', function() {
+
+            it('should throw exception for non-existing directive', function() {
+                expect(function() {
+                    moduleIntrospectorFactory('aModule')
+                        .getProviderComponentDeclaration('$compileProvider', 'aNonExistingDirective');
+                }).toThrow('Could not find registered component "aNonExistingDirective" for provider: ' +
+                        '$compileProvider');
+            });
+
+            it('should return built-in (from "ng" module) directive', function() {
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$compileProvider', 'option');
+
+                expect(result).toBeTruthy();
+                expect(result.providerMethod).toBe('directive');
+                expect(result.componentName).toBe('option');
+                expect(angular.isArray(result.rawDeclaration)).toBe(true);
+                expect(result.rawDeclaration.length).toBe(2);
+                expect(result.rawDeclaration[0]).toBe('$interpolate');
+                expect(angular.isFunction(result.rawDeclaration[1])).toBe(true);
+                expect(result.strippedDeclaration).toBe(result.rawDeclaration[1]);
+                expect(result.injectedServices).toEqual(['$interpolate']);
+            });
+
+            it('should return declared directive', function() {
+                var directiveLinkFn = jasmine.createSpy();
+
+                var directiveDeclaration = ['anotherService', '$http', function() {
+                    return directiveLinkFn;
+                }];
+
+                moduleInstance.directive('aDirective', directiveDeclaration);
+
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$compileProvider', 'aDirective');
+
+                expect(result).toEqual({
+                    providerMethod: 'directive',
+                    componentName: 'aDirective',
+                    rawDeclaration: directiveDeclaration,
+                    strippedDeclaration: directiveDeclaration[2],
+                    injectedServices: directiveDeclaration.slice(0, 2)
+                });
+            });
+        });
+
+
+        describe('for $animateProvider', function() {
+
+            it('should throw exception for non-existing animation', function() {
+                expect(function() {
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                            '$animateProvider', 'aNonExistingAnimation');
+                }).toThrow('Could not find registered component "aNonExistingAnimation" for provider: ' +
+                        '$animateProvider');
+            });
+
+            it('should return declared animation', function() {
+                var animationDeclaration = ['anotherService', '$http', function() {
                     return {
-                        $get: $getMethod
+                        enter: angular.noop
                     };
                 }];
 
-                moduleInstance.provider('aService', serviceProviderAsFunction);
+                moduleInstance.animation('.anAnimation', animationDeclaration);
 
-                moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.andReturn(
-                    {module: moduleInstance, providerMethod: 'provider', declaration: serviceProviderAsFunction});
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
+                        '$animateProvider', '.anAnimation');
 
-                var result = moduleIntrospector.getServiceDeclaration('aService');
-
-                expect(result).toEqual(
-                    {module: moduleInstance, providerName: '$provide', providerMethod: 'provider',
-                        declaration: $getMethod});
-
-                expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                    .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
+                expect(result).toEqual({
+                    providerMethod: 'register',
+                    componentName: '.anAnimation',
+                    rawDeclaration: animationDeclaration,
+                    strippedDeclaration: animationDeclaration[2],
+                    injectedServices: animationDeclaration.slice(0, 2)
+                });
             });
         });
+
     });
 
 
 
-    describe('getServiceDependencies method', function() {
-
-        it('should throw exception for non-existing service', function() {
+    describe('getProviderDeclaration method', function() {
+        it('should throw exception for unknown provider name', function() {
             expect(function() {
-                moduleIntrospector.getServiceDependencies(injector, 'aNonExistingService');
-            }).toThrow('Could not find service with name: aNonExistingService');
+                moduleIntrospectorFactory('aModule').getProviderDeclaration('anUnknownProvider');
+            }).toThrow('Could not find provider: anUnknownProvider');
         });
 
-        it('should throw exception for non-overridden built-in (from "ng" module) service', function() {
-            expect(function() {
-                moduleIntrospector.getServiceDependencies(injector, '$http');
-            }).toThrow('Could not find declaration of service with name: $http');
+        it('should return provider object', function() {
+            moduleInstance.provider('aService', originalProviderObject);
+
+            expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                rawDeclaration: originalProviderObject,
+                strippedDeclaration: originalProviderObject,
+                injectedProviders: []
+            });
         });
 
-        it('should return dependencies for service', function() {
-            var serviceFactory = ['anotherService', '$http', function() {
-                return {};
-            }];
+        describe('should return provider constructor', function() {
+            it('when its non-annotated', function() {
+                moduleInstance.provider('aService',
+                        originalProviderConstructor[originalProviderConstructor.length - 1]);
 
-            moduleInstance.factory('aService', serviceFactory);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andCallFake(function(module, providerName, providerMethods, itemName) {
-                    if (itemName === 'aService') {
-                        return {module: module, providerMethod: 'factory', declaration: serviceFactory};
-                    } else if (itemName === 'anotherService') {
-                        return {module: module, providerMethod: 'value', declaration: anotherService};
-                    }
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                    rawDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
+                    strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
+                    injectedProviders: ['$provide', '$compileProvider']
                 });
-
-            var result = moduleIntrospector.getServiceDependencies(injector, 'aService');
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
-
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
-        });
-
-        it('should support service registered with the "provider" method with an object', function() {
-            var serviceProviderAsObject = {
-                $get: ['anotherService', '$http', function() {
-                    return {};
-                }]
-            };
-
-            moduleInstance.provider('aService', serviceProviderAsObject);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'provider', declaration: serviceProviderAsObject});
-
-            var result = moduleIntrospector.getServiceDependencies(injector, 'aService');
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
-
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http.module).toBe(moduleInstance);
-            expect(result.$http.instance).toBe(injector.get('$http'));
-        });
-
-        it('should support service registered with the "provider" method with an function', function() {
-            var serviceProviderAsFunction = ['anotherProviderProvider', function(anotherProviderProvider) {
-                expect(anotherProviderProvider).toBe(anotherProviderProviderInstance);
-
-                return {
-                    $get: ['anotherService', '$http', function() {
-                        return {};
-                    }]
-                };
-            }];
-
-            moduleInstance.provider('aService', serviceProviderAsFunction);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.andReturn(
-                    {module: moduleInstance, providerMethod: 'provider', declaration: serviceProviderAsFunction});
-
-            var result = moduleIntrospector.getServiceDependencies(injector, 'aService');
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$provide', serviceRegistrationMethodNames, 'aService');
-
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http.module).toBe(moduleInstance);
-            expect(result.$http.instance).toBe(injector.get('$http'));
-        });
-    });
-
-
-
-    describe('getFilterDeclaration method', function() {
-
-        it('should throw exception for non-existing filter', function() {
-            expect(function() {
-                moduleIntrospector.getFilterDeclaration('aNonExistingFilter');
-            }).toThrow('Could not find filter with name: aNonExistingFilter');
-        });
-
-        it('should throw exception for non-overridden built-in (from "ng" module) filter', function() {
-            expect(function() {
-                moduleIntrospector.getFilterDeclaration('filter');
-            }).toThrow('Could not find declaration of filter with name: filter');
-        });
-
-        it('should return declared filter', function() {
-            var filterFactory = ['anotherService', '$http', function() {
-                return function() {};
-            }];
-
-            moduleInstance.filter('aFilter', filterFactory);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'filter', declaration: filterFactory});
-
-            var result = moduleIntrospector.getFilterDeclaration('aFilter');
-
-            expect(result).toEqual({
-                module: moduleInstance,
-                providerName: '$filterProvider',
-                providerMethod: 'filter',
-                declaration: filterFactory
             });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$filterProvider', ['register'], 'aFilter');
-        });
-    });
+            it('when its annotated', function() {
+                moduleInstance.provider('aService', originalProviderConstructor);
 
-
-
-    describe('getFilterDependencies method', function() {
-
-        it('should throw exception for non-existing filter', function() {
-            expect(function() {
-                moduleIntrospector.getFilterDependencies(injector, 'aNonExistingFilter');
-            }).toThrow('Could not find filter with name: aNonExistingFilter');
-        });
-
-        it('should throw exception for non-overridden built-in (from "ng" module) filter', function() {
-            expect(function() {
-                moduleIntrospector.getFilterDependencies(injector, 'currency');
-            }).toThrow('Could not find declaration of filter with name: currency');
-        });
-
-        it('should return dependencies for filter', function() {
-            var filterFactory = ['anotherService', '$http', function() {
-                return function() {};
-            }];
-
-            moduleInstance.filter('aFilter', filterFactory);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andCallFake(function(module, providerName, providerMethods, itemName) {
-                    if (itemName === 'aFilter') {
-                        return {module: module, providerMethod: 'register', declaration: filterFactory};
-                    } else if (itemName === 'anotherService') {
-                        return {module: module, providerMethod: 'value', declaration: anotherService};
-                    }
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                    rawDeclaration: originalProviderConstructor,
+                    strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
+                    injectedProviders: ['$provide', '$compileProvider']
                 });
-
-            var result = moduleIntrospector.getFilterDependencies(injector, 'aFilter');
-
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$filterProvider', ['register'], 'aFilter']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
-
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
-        });
-    });
-
-
-
-    describe('getControllerDeclaration method', function() {
-
-        it('should throw exception for non-existing controller', function() {
-            expect(function() {
-                moduleIntrospector.getControllerDeclaration('aNonExistingController');
-            }).toThrow('Could not find controller with name: aNonExistingController');
+            });
         });
 
-        it('should return declared controller', function() {
-            var controllerConstructor = ['anotherService', '$http', function() {
-            }];
 
-            moduleInstance.controller('aController', controllerConstructor);
+        describe('a provider object should allow overriding', function() {
+            afterEach(function() {
+                moduleInstance.provider('aService', originalProviderObject);
 
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'register', declaration: controllerConstructor});
-
-            var result = moduleIntrospector.getControllerDeclaration('aController');
-
-            expect(result).toEqual({
-                module: moduleInstance,
-                providerName: '$controllerProvider',
-                providerMethod: 'register',
-                declaration: controllerConstructor
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                    rawDeclaration: originalProviderObject,
+                    strippedDeclaration: originalProviderObject,
+                    injectedProviders: []
+                });
             });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$controllerProvider', ['register'], 'aController');
-        });
-    });
 
-
-
-    describe('getControllerDependencies method', function() {
-
-        it('should throw exception for non-existing controller', function() {
-            expect(function() {
-                moduleIntrospector.getControllerDependencies(injector, 'aNonExistingController');
-            }).toThrow('Could not find controller with name: aNonExistingController');
-        });
-
-        it('should return dependencies for controller', function() {
-            var ACtrl = ['$scope', 'anotherService', '$http', angular.noop];
-
-            moduleInstance.controller('aController', ACtrl);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andCallFake(function(module, providerName, providerMethods, itemName) {
-                    if (itemName === 'aController') {
-                        return {module: module, providerMethod: 'register', declaration: ACtrl};
-                    } else if (itemName === 'anotherService') {
-                        return {module: module, providerMethod: 'value', declaration: anotherService};
-                    }
+            describe('from another module', function() {
+                it('a value', function() {
+                    anotherModuleInstance.value('aService', originalValue);
                 });
 
-            var result = moduleIntrospector.getControllerDependencies(injector, 'aController');
+                it('a service', function() {
+                    anotherModuleInstance.service('aService', originalService);
+                });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$controllerProvider', ['register'], 'aController']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
+                it('a factory', function() {
+                    anotherModuleInstance.factory('aService', originalFactory);
+                });
 
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
-        });
-    });
+                it('a provider object', function() {
+                    anotherModuleInstance.provider('aService', originalProviderObject);
+                });
 
-
-
-    describe('getDirectiveDeclaration method', function() {
-
-        it('should throw exception for non-existing directive', function() {
-            expect(function() {
-                moduleIntrospector.getDirectiveDeclaration('aNonExistingDirective');
-            }).toThrow('Could not find directive with name: aNonExistingDirective');
-        });
-
-        it('should return declared directive', function() {
-            var directiveLinkFn = jasmine.createSpy();
-
-            var directiveDeclaration = ['anotherService', '$http', function() {
-                return directiveLinkFn;
-            }];
-
-            moduleInstance.directive('aDirective', directiveDeclaration);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'directive', declaration: directiveDeclaration});
-
-            var result = moduleIntrospector.getDirectiveDeclaration('aDirective');
-
-            expect(result).toEqual({
-                module: moduleInstance,
-                providerName: '$compileProvider',
-                providerMethod: 'directive',
-                declaration: directiveDeclaration
+                it('a provider constructor', function() {
+                    anotherModuleInstance.provider('aService', originalProviderConstructor);
+                });
             });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$compileProvider', ['directive'], 'aDirective');
-        });
-    });
-
-
-
-    describe('getDirectiveDependencies method', function() {
-
-        it('should throw exception for non-existing directive', function() {
-            expect(function() {
-                moduleIntrospector.getDirectiveDependencies(injector, 'aNonExistingDirective');
-            }).toThrow('Could not find directive with name: aNonExistingDirective');
-        });
-
-        it('should return dependencies for directive', function() {
-            var directiveDeclaration = ['anotherService', '$http', angular.noop];
-
-            moduleInstance.directive('aDirective', directiveDeclaration);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andCallFake(function(module, providerName, providerMethods, itemName) {
-                    if (itemName === 'aDirective') {
-                        return {module: module, providerMethod: 'directive', declaration: directiveDeclaration};
-                    } else if (itemName === 'anotherService') {
-                        return {module: module, providerMethod: 'value', declaration: anotherService};
-                    }
+            describe('from the same module', function() {
+                it('a value', function() {
+                    moduleInstance.value('aService', originalValue);
                 });
 
-            var result = moduleIntrospector.getDirectiveDependencies(injector, 'aDirective');
+                it('a service', function() {
+                    moduleInstance.service('aService', originalService);
+                });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$compileProvider', ['directive'], 'aDirective']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
+                it('a factory', function() {
+                    moduleInstance.factory('aService', originalFactory);
+                });
 
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
-        });
-    });
+                it('a provider object', function() {
+                    moduleInstance.provider('aService', originalProviderObject);
+                });
 
-
-
-    describe('getAnimationDeclaration method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
-
-        it('should throw exception for non-existing animation', function() {
-            if (angular1_0) {
-                return;
-            }
-
-
-            expect(function() {
-                moduleIntrospector.getAnimationDeclaration('aNonExistingAnimation');
-            }).toThrow('Could not find animation with name: aNonExistingAnimation');
+                it('a provider constructor', function() {
+                    moduleInstance.provider('aService', originalProviderConstructor);
+                });
+            });
         });
 
-        it('should return declared animation', function() {
-            if (angular1_0) {
-                return;
-            }
+        describe('a provider constructor should allow overriding', function() {
+            afterEach(function() {
+                moduleInstance.provider('aService', overriddenProviderConstructor);
 
-
-            var animationDeclaration = ['anotherService', '$http', function() {
-                return {
-                    enter: angular.noop
-                };
-            }];
-
-            moduleInstance.animation('.anAnimation', animationDeclaration);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andReturn({module: moduleInstance, providerMethod: 'register', declaration: animationDeclaration});
-
-            var result = moduleIntrospector.getAnimationDeclaration('.anAnimation');
-
-            expect(result).toEqual({
-                module: moduleInstance,
-                providerName: '$animateProvider',
-                providerMethod: 'register',
-                declaration: animationDeclaration
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                    rawDeclaration: overriddenProviderConstructor,
+                    strippedDeclaration: overriddenProviderConstructor[originalProviderConstructor.length - 1],
+                    injectedProviders: ['$provide', '$compileProvider']
+                });
             });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo)
-                .toHaveBeenCalledWith(moduleInstance, '$animateProvider', ['register'], '.anAnimation');
-        });
-    });
 
-
-
-    describe('getAnimationDependencies method' + (angular1_0 ? ' (not supported by angular 1.0) ' : ''), function() {
-
-        it('should throw exception for non-existing animation', function() {
-            if (angular1_0) {
-                return;
-            }
-
-
-            expect(function() {
-                moduleIntrospector.getAnimationDependencies(injector, 'aNonExistingAnimation');
-            }).toThrow('Could not find animation with name: aNonExistingAnimation');
-        });
-
-        it('should return dependencies for animation', function() {
-            if (angular1_0) {
-                return;
-            }
-
-
-            var animationDeclaration = ['anotherService', '$http', function() {
-                return {
-                    enter: angular.noop
-                };
-            }];
-
-            moduleInstance.animation('.anAnimation', animationDeclaration);
-
-            moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo
-                .andCallFake(function(module, providerName, providerMethods, itemName) {
-                    if (itemName === '.anAnimation') {
-                        return {module: module, providerMethod: 'register', declaration: animationDeclaration};
-                    } else if (itemName === 'anotherService') {
-                        return {module: module, providerMethod: 'value', declaration: anotherService};
-                    }
+            describe('from another module', function() {
+                it('a value', function() {
+                    anotherModuleInstance.value('aService', originalValue);
                 });
 
-            var result = moduleIntrospector.getAnimationDependencies(injector, '.anAnimation');
+                it('a service', function() {
+                    anotherModuleInstance.service('aService', originalService);
+                });
 
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls.length).toBe(3);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[0].args)
-                .toEqual([moduleInstance, '$animateProvider', ['register'], '.anAnimation']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[1].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, 'anotherService']);
-            expect(moduleInvokeQueueItemInfoExtractor.findInvokeQueueItemInfo.calls[2].args)
-                .toEqual([moduleInstance, '$provide', serviceRegistrationMethodNames, '$http']);
+                it('a factory', function() {
+                    anotherModuleInstance.factory('aService', originalFactory);
+                });
 
-            expect(result).toBeDefined();
-            expect(Object.getOwnPropertyNames(result).length).toBe(2);
-            expect(result.anotherService).toEqual({module: moduleInstance, instance: anotherService});
-            expect(result.$http).toEqual({module: ngModule, instance: injector.get('$http')});
+                it('a provider object', function() {
+                    anotherModuleInstance.provider('aService', originalProviderObject);
+                });
+
+                it('a provider constructor', function() {
+                    anotherModuleInstance.provider('aService', originalProviderConstructor);
+                });
+            });
+
+            describe('from the same module', function() {
+                it('a value', function() {
+                    moduleInstance.value('aService', originalValue);
+                });
+
+                it('a service', function() {
+                    moduleInstance.service('aService', originalService);
+                });
+
+                it('a factory', function() {
+                    moduleInstance.factory('aService', originalFactory);
+                });
+
+                it('a provider object', function() {
+                    moduleInstance.provider('aService', originalProviderObject);
+                });
+
+                it('a provider constructor', function() {
+                    moduleInstance.provider('aService', originalProviderConstructor);
+                });
+            });
         });
+
+
+        describe('should properly handle multiple registered providers', function() {
+            beforeEach(function() {
+                moduleInstance.provider({
+                    aService: originalProviderConstructor,
+                    anotherService: overriddenProviderConstructor
+                });
+            });
+
+            it('and register the first', function() {
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                    rawDeclaration: originalProviderConstructor,
+                    strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
+                    injectedProviders: ['$provide', '$compileProvider']
+                });
+            });
+
+            it('and register the second', function() {
+                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('anotherServiceProvider')).toEqual({
+                    rawDeclaration: overriddenProviderConstructor,
+                    strippedDeclaration: overriddenProviderConstructor[overriddenProviderConstructor.length - 1],
+                    injectedProviders: ['$provide', '$compileProvider']
+                });
+            });
+        });
+
     });
 
 });

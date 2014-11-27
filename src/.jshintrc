@@ -7,12 +7,12 @@
     "unused": true,
     "noarg": true,
     "trailing": true,
-    //TODO: remove once "module.prefix" + "module.suffix" is used
-//    "indent": 4,
+    "indent": 4,
     "forin":true,
     "noempty": true,
     "quotmark": "single",
-    "maxparams": 4,
+    //TODO: try if we quick restore maxparams back to 4 after some refactoring
+    "maxparams": 6,
     "eqeqeq": true,
     "strict": true,
     "undef": true,
@@ -22,7 +22,7 @@
     "es3": true,
     "maxcomplexity": 10,
     "nonbsp": true,
-    "maxlen": 120,
+    "maxlen": 140,
     "freeze": true,
     "globalstrict" :true,
     "globals": {
