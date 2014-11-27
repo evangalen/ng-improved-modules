@@ -17,7 +17,7 @@ module.exports = function(grunt) {
                     footer: fs.readFileSync('src/module.suffix', 'utf8')
                 },
                 files: {
-                    'dist/ngModuleIntrospector-nonAnnotated.js': ['src/module.js', 'src/*.js']
+                    'dist/<%= pkg.name %>-nonAnnotated.js': ['src/module.js', 'src/*.js']
                 }
             }
         },
@@ -27,7 +27,7 @@ module.exports = function(grunt) {
             },
             default: {
                 files: {
-                    'dist/<%= pkg.name %>.js': ['dist/ngModuleIntrospector-nonAnnotated.js']
+                    'dist/<%= pkg.name %>.js': ['dist/<%= pkg.name %>-nonAnnotated.js']
                 }
             }
         },
