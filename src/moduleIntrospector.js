@@ -103,7 +103,8 @@ function ModuleIntrospector(moduleNames) {
             componentName: componentName,
             rawDeclaration: rawDeclaration,
             strippedDeclaration: strippedDeclaration,
-            injectedServices: injectedServices
+            injectedServices: injectedServices,
+            builtIn: processingBuiltInComponents
         };
     }
 
@@ -132,7 +133,8 @@ function ModuleIntrospector(moduleNames) {
         serviceProviderDeclarationPerProviderName[serviceProviderName] = {
                 rawDeclaration: rawDeclaration,
                 strippedDeclaration: strippedDeclaration,
-                injectedProviders: injectedProviders
+                injectedProviders: injectedProviders,
+                builtIn: processingBuiltInComponents
             };
     }
 
@@ -168,7 +170,8 @@ function ModuleIntrospector(moduleNames) {
      *          componentName: string,
      *          rawDeclaration: *,
      *          strippedDeclaration: *,
-     *          injectedServices: string[]
+     *          injectedServices: string[],
+     *          builtIn: boolean
      *      }>
      *  >}
      */
@@ -178,7 +181,8 @@ function ModuleIntrospector(moduleNames) {
       * @type {Object.<{
       *     rawDeclaration: RawProviderDeclaration,
       *     strippedDeclaration: StrippedProviderDeclaration,
-      *     injectedProviders: string[]
+      *     injectedProviders: string[],
+      *     builtIn: boolean
       *  }>}
       */
     var serviceProviderDeclarationPerProviderName = {};
@@ -194,6 +198,7 @@ function ModuleIntrospector(moduleNames) {
 
     var providerInjector = null;
 
+    var processingBuiltInComponents = false;
 
     /** @ngInject */
     var providerInjectorCapturingConfigFn = function ($injector) {
@@ -263,10 +268,20 @@ function ModuleIntrospector(moduleNames) {
         });
     };
 
+    /**
+     * @param {boolean} b
+     * @returns {function()}
+     */
+    var setProcessingBuiltInComponentsTo = function(b) {
+        return function() {
+            processingBuiltInComponents = b;
+        };
+    };
 
     // create an injector that first captures the "providerInjector", then hooks the $provide methods,
     // after that loads the ng module and finally loads the modules of moduleNames.
-    angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn, 'ng'].concat(moduleNames));
+    angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn,
+            setProcessingBuiltInComponentsTo(true), 'ng', setProcessingBuiltInComponentsTo(false)].concat(moduleNames));
 
 
     /**
@@ -277,7 +292,8 @@ function ModuleIntrospector(moduleNames) {
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: string[]
+     *      injectedServices: string[],
+     *      builtIn: boolean
      *  }}
      */
     this.getProviderComponentDeclaration = function(providerName, componentName) {
@@ -294,7 +310,12 @@ function ModuleIntrospector(moduleNames) {
 
     /**
      * @param {string} providerName
-     * @returns {{rawDeclaration: RawProviderDeclaration, strippedDeclaration: StrippedProviderDeclaration, injectedProviders: string[]}}
+     * @returns {{
+     *      rawDeclaration: RawProviderDeclaration,
+     *      strippedDeclaration: StrippedProviderDeclaration,
+     *      injectedProviders: string[],
+     *      builtIn: boolean
+     *  }}
      */
     this.getProviderDeclaration = function(providerName) {
         var result = serviceProviderDeclarationPerProviderName[providerName];

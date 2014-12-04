@@ -719,6 +719,7 @@ describe('moduleIntrospector service', function() {
                 expect(result.rawDeclaration.$inject).toEqual(['$locale']);
                 expect(result.strippedDeclaration).toBe(result.rawDeclaration);
                 expect(result.injectedServices).toEqual(['$locale']);
+                expect(result.builtIn).toBe(true);
             });
 
             it('should return declared filter', function() {
@@ -736,7 +737,8 @@ describe('moduleIntrospector service', function() {
                     componentName: 'aFilter',
                     rawDeclaration: filterFactory,
                     strippedDeclaration: filterFactory[2],
-                    injectedServices: filterFactory.slice(0, 2)
+                    injectedServices: filterFactory.slice(0, 2),
+                    builtIn: false
                 });
             });
         });
@@ -766,7 +768,8 @@ describe('moduleIntrospector service', function() {
                     componentName: 'aController',
                     rawDeclaration: controllerConstructor,
                     strippedDeclaration: controllerConstructor[2],
-                    injectedServices: controllerConstructor.slice(0, 2)
+                    injectedServices: controllerConstructor.slice(0, 2),
+                    builtIn: false
                 });
             });
         });
@@ -795,6 +798,7 @@ describe('moduleIntrospector service', function() {
                 expect(angular.isFunction(result.rawDeclaration[1])).toBe(true);
                 expect(result.strippedDeclaration).toBe(result.rawDeclaration[1]);
                 expect(result.injectedServices).toEqual(['$interpolate']);
+                expect(result.builtIn).toBe(true);
             });
 
             it('should return declared directive', function() {
@@ -814,7 +818,8 @@ describe('moduleIntrospector service', function() {
                     componentName: 'aDirective',
                     rawDeclaration: directiveDeclaration,
                     strippedDeclaration: directiveDeclaration[2],
-                    injectedServices: directiveDeclaration.slice(0, 2)
+                    injectedServices: directiveDeclaration.slice(0, 2),
+                    builtIn: false
                 });
             });
         });
@@ -847,7 +852,8 @@ describe('moduleIntrospector service', function() {
                     componentName: '.anAnimation',
                     rawDeclaration: animationDeclaration,
                     strippedDeclaration: animationDeclaration[2],
-                    injectedServices: animationDeclaration.slice(0, 2)
+                    injectedServices: animationDeclaration.slice(0, 2),
+                    builtIn: false
                 });
             });
         });
@@ -869,7 +875,8 @@ describe('moduleIntrospector service', function() {
             expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                 rawDeclaration: originalProviderObject,
                 strippedDeclaration: originalProviderObject,
-                injectedProviders: []
+                injectedProviders: [],
+                builtIn: false
             });
         });
 
@@ -881,7 +888,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
-                    injectedProviders: ['$provide', '$compileProvider']
+                    injectedProviders: ['$provide', '$compileProvider'],
+                    builtIn: false
                 });
             });
 
@@ -891,7 +899,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor,
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
-                    injectedProviders: ['$provide', '$compileProvider']
+                    injectedProviders: ['$provide', '$compileProvider'],
+                    builtIn: false
                 });
             });
         });
@@ -904,7 +913,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderObject,
                     strippedDeclaration: originalProviderObject,
-                    injectedProviders: []
+                    injectedProviders: [],
+                    builtIn: false
                 });
             });
 
@@ -961,7 +971,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: overriddenProviderConstructor,
                     strippedDeclaration: overriddenProviderConstructor[originalProviderConstructor.length - 1],
-                    injectedProviders: ['$provide', '$compileProvider']
+                    injectedProviders: ['$provide', '$compileProvider'],
+                    builtIn: false
                 });
             });
 
@@ -1024,7 +1035,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor,
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
-                    injectedProviders: ['$provide', '$compileProvider']
+                    injectedProviders: ['$provide', '$compileProvider'],
+                    builtIn: false
                 });
             });
 
@@ -1032,7 +1044,8 @@ describe('moduleIntrospector service', function() {
                 expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('anotherServiceProvider')).toEqual({
                     rawDeclaration: overriddenProviderConstructor,
                     strippedDeclaration: overriddenProviderConstructor[overriddenProviderConstructor.length - 1],
-                    injectedProviders: ['$provide', '$compileProvider']
+                    injectedProviders: ['$provide', '$compileProvider'],
+                    builtIn: false
                 });
             });
         });
