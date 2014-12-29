@@ -13,12 +13,12 @@
 
 /**
  * @ngdoc type
- * @param {...string} moduleNames
+ * @param {string} moduleName
+ * @param {boolean} [includeNgMock = false]
  * @constructor
  */
-function ModuleIntrospector(moduleNames) {
-    moduleNames = Array.prototype.slice.call(arguments, 0);
-
+function ModuleIntrospector(moduleName, includeNgMock) {
+    includeNgMock = includeNgMock || false;
 
     /**
      * @param {object} providerInstance
@@ -92,6 +92,10 @@ function ModuleIntrospector(moduleNames) {
      */
     function registerComponent(
             providerName, providerMethod, componentName, rawDeclaration, strippedDeclaration, injectedServices) {
+        if (forgetFutureRegisteredComponents) {
+            return;
+        }
+
         var registeredComponents = registeredComponentsPerProviderName[providerName];
         if (!registeredComponents) {
             registeredComponents = {};
@@ -130,6 +134,10 @@ function ModuleIntrospector(moduleNames) {
      */
     function registerServiceProviderDeclaration(
             serviceProviderName, rawDeclaration, strippedDeclaration, injectedProviders) {
+        if (forgetFutureRegisteredComponents) {
+            return;
+        }
+
         serviceProviderDeclarationPerProviderName[serviceProviderName] = {
                 rawDeclaration: rawDeclaration,
                 strippedDeclaration: strippedDeclaration,
@@ -199,6 +207,8 @@ function ModuleIntrospector(moduleNames) {
     var providerInjector = null;
 
     var processingBuiltInComponents = false;
+
+    var forgetFutureRegisteredComponents = false;
 
     /** @ngInject */
     var providerInjectorCapturingConfigFn = function ($injector) {
@@ -278,10 +288,22 @@ function ModuleIntrospector(moduleNames) {
         };
     };
 
+    /**
+     * @param {boolean} b
+     * @returns {function()}
+     */
+    var setForgetFutureRegisteredComponents = function(b) {
+        return function() {
+            forgetFutureRegisteredComponents = b;
+        };
+    };
+
     // create an injector that first captures the "providerInjector", then hooks the $provide methods,
     // after that loads the ng module and finally loads the modules of moduleNames.
     angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn,
-            setProcessingBuiltInComponentsTo(true), 'ng', setProcessingBuiltInComponentsTo(false)].concat(moduleNames));
+            setProcessingBuiltInComponentsTo(true), 'ng',
+            setForgetFutureRegisteredComponents(!includeNgMock), 'ngMock', setForgetFutureRegisteredComponents(false),
+            setProcessingBuiltInComponentsTo(false), moduleName]);
 
 
     /**
@@ -327,6 +349,22 @@ function ModuleIntrospector(moduleNames) {
         return result; //TODO: investigate with WebStorm complains about incompatible types
     };
 
+    /**
+     * @returns {string[]}
+     */
+    this.getBuiltInProviderNames = function() {
+        var result = [];
+
+        for (var providerName in serviceProviderDeclarationPerProviderName) {
+            if (serviceProviderDeclarationPerProviderName.hasOwnProperty(providerName) &&
+                    serviceProviderDeclarationPerProviderName[providerName].builtIn) {
+                result.push(providerName);
+            }
+        }
+
+        return result;
+    };
+
 }
 
 
@@ -336,11 +374,12 @@ angular.module('ngModuleIntrospector')
         /**
          * @ngdoc service
          * @name moduleIntrospector
-         * @param {...string} modules
+         * @param {string} module
+         * @params {boolean} includeNgMock
          * @returns {ModuleIntrospector}
          * @function
          */
-        return function moduleIntrospector(modules) {
-            return new ModuleIntrospector(modules);
+        return function moduleIntrospector(module, includeNgMock) {
+            return new ModuleIntrospector(module, includeNgMock);
         };
     });
