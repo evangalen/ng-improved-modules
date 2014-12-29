@@ -9,7 +9,7 @@ Currently ngModelIntrospector only allows retrieving a specific:
 
 The ngModuleIntrospector library declare a single AngularJS module called "ngModuleIntrospector".
 This AngularJS module consists of only one service and one type:
- - `moduleIntrospector` factory method: returns an instance of the ModuleIntrospector type for the provided module name.
+ - `moduleIntrospector` factory method: returns an instance of the ModuleIntrospector type for the provided module name. An optional second argument called "includeNgMock" (with a default value of false) allows specifying if components registered by "ngMock" should be included or not.
     *TODO*: add description about the includeNgMock flag
  - `ModuleIntrospector` type: consists of only two public methods:
     - `getProviderComponentDeclaration`: returns the declaration of registerd component of a provider.<br>
