@@ -1066,4 +1066,99 @@ describe('moduleIntrospector service', function() {
 
     });
 
+
+
+    describe('getBuiltInProviderNames method', function() {
+        var moduleIntrospector;
+
+        beforeEach(function() {
+            moduleInstance
+                .constant('aConstantService', {})
+                .value('aValueService', {})
+                .service('aServiceService', angular.noop)
+                .factory('aServiceFactory', function() {
+                    return {};
+                })
+                .provider('aServiceProvider', {
+                    $get: function() {
+                        return {};
+                    }
+                });
+
+            moduleIntrospector = moduleIntrospectorFactory('aModule');
+        });
+
+
+        it('should return an array that contains "$filterProvider"', function() {
+            expect(moduleIntrospector.getBuiltInProviderNames()).toContain('$filterProvider');
+        });
+
+        it('should return an array that contains "$controllerProvider"', function() {
+            expect(moduleIntrospector.getBuiltInProviderNames()).toContain('$controllerProvider');
+        });
+
+        it('should return an array that contains "$compileProvider"', function() {
+            expect(moduleIntrospector.getBuiltInProviderNames()).toContain('$compileProvider');
+        });
+
+        it('should return an array that contains "$animateProvider"', function() {
+            expect(moduleIntrospector.getBuiltInProviderNames()).toContain('$animateProvider');
+        });
+
+        it('should return an array that contains "$logProvider"', function() {
+            expect(moduleIntrospector.getBuiltInProviderNames()).toContain('$logProvider');
+        });
+
+        it('should return an array that does not contain any on the non built-in service', function() {
+            var result = moduleIntrospector.getBuiltInProviderNames();
+
+            expect(result).not.toContain('aServiceConstantProvider');
+            expect(result).not.toContain('aServiceValueProvider');
+            expect(result).not.toContain('aServiceServiceProvider');
+            expect(result).not.toContain('aServiceFactoryProvider');
+            expect(result).not.toContain('aServiceProviderProvider');
+        });
+    });
+
+
+
+    describe('getProviderMetadata method', function() {
+        var moduleIntrospector;
+
+        beforeEach(function() {
+            moduleIntrospector = moduleIntrospectorFactory('aModule');
+        });
+
+
+        it('should return correct metadata for $provide', function() {
+            expect(moduleIntrospector.getProviderMetadata('$provide')).toEqual({
+                providerMethods: ['constant', 'value', 'service', 'factory', 'provider'],
+                overridesEarlierRegistrations: true
+            });
+        });
+
+        it('should return correct metadata for $filterProvider', function() {
+            expect(moduleIntrospector.getProviderMetadata('$filterProvider'))
+                .toEqual({providerMethods: ['register'], overridesEarlierRegistrations: true});
+        });
+
+        it('should return correct metadata for $controllerProvider', function() {
+            expect(moduleIntrospector.getProviderMetadata('$controllerProvider'))
+                .toEqual({providerMethods: ['register'], overridesEarlierRegistrations: true});
+        });
+
+        it('should return correct metadata for $compileProvider', function() {
+            expect(moduleIntrospector.getProviderMetadata('$compileProvider'))
+                .toEqual({providerMethods: ['directive'], overridesEarlierRegistrations: false});
+        });
+
+        it('should return correct metadata for $animateProvider', function() {
+            expect(moduleIntrospector.getProviderMetadata('$animateProvider'))
+                .toEqual({providerMethods: ['register'], overridesEarlierRegistrations: true});
+        });
+
+        it('should return null when no metadata is available', function() {
+            expect(moduleIntrospector.getProviderMetadata('$logProvider')).toBe(null);
+        });
+    });
 });

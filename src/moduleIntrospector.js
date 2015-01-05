@@ -173,7 +173,7 @@ function ModuleIntrospector(moduleName, includeNgMock) {
                     throw 'Unexpected registered factory: ' + name;
                 }
 
-                var filterProviderRegistrationMethodName = metadataPerProvider.$filterProvider.providerMethod;
+                var filterProviderRegistrationMethodName = metadataPerProvider.$filterProvider.providerMethods[0];
                 var nameWithoutSuffix = name.substring(0, name.length - suffix.length);
 
                 registerComponentDeclaration('$filterProvider', filterProviderRegistrationMethodName, nameWithoutSuffix, getFn,
@@ -214,25 +214,23 @@ function ModuleIntrospector(moduleName, includeNgMock) {
 
     var metadataPerProvider = {
         $provide: {
-            // this property will never be used for `$provide`;
-            // setting it would be difficult since $provide has more than one registration method
-            providerMethod: null,
+            providerMethods: ['constant', 'value', 'service', 'factory', 'provider'],
             overridesEarlierRegistrations: true
         },
         $filterProvider: {
-            providerMethod: 'register',
+            providerMethods: ['register'],
             overridesEarlierRegistrations: true
         },
         $controllerProvider: {
-            providerMethod: 'register',
+            providerMethods: ['register'],
             overridesEarlierRegistrations: true
         },
         $compileProvider: {
-            providerMethod: 'directive',
+            providerMethods: ['directive'],
             overridesEarlierRegistrations: false
         },
         $animateProvider: {
-            providerMethod: 'register',
+            providerMethods: ['register'],
             overridesEarlierRegistrations: true
         }
     };
@@ -303,12 +301,14 @@ function ModuleIntrospector(moduleName, includeNgMock) {
 
 
             var providerMetadata = metadataPerProvider[providerName];
-            var providerMethodOfProvider = providerMetadata && providerMetadata.providerMethod;
-            if (providerMethodOfProvider) {
-                afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
+            var providerMethodsOfProvider = providerMetadata && providerMetadata.providerMethods;
+            if (providerMethodsOfProvider) {
+                angular.forEach(providerMethodsOfProvider, function(providerMethodOfProvider) {
+                    afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
                         /** string */ name, /** PossiblyAnnotatedFn */ rawDeclaration) {
-                    registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
+                        registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
                             stripAnnotations(rawDeclaration), determineDependencies(rawDeclaration));
+                    });
                 });
             }
         });
@@ -401,6 +401,13 @@ function ModuleIntrospector(moduleName, includeNgMock) {
         return result;
     };
 
+    /**
+     * @param {string} providerName
+     * @returns {?{providerMethods: string[], overridesEarlierRegistrations: boolean}}
+     */
+    this.getProviderMetadata = function(providerName) {
+        return metadataPerProvider[providerName] || null;
+    };
 }
 
 
