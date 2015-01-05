@@ -84,11 +84,11 @@ describe('moduleIntrospector service', function() {
 
 
 
-    describe('getProviderComponentDeclaration method', function() {
+    describe('getProviderComponentDeclarations method', function() {
 
         it('should throw exception for unknown provider name', function() {
             expect(function() {
-                moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('anUnknownProvider', 'aComponentName');
+                moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('anUnknownProvider', 'aComponentName');
             }).toThrow('Could not find registered component "aComponentName" for provider: anUnknownProvider');
         });
 
@@ -97,7 +97,7 @@ describe('moduleIntrospector service', function() {
 
             it('should throw an exception for a non existing service', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'nonExistingService');
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'nonExistingService');
                 }).toThrow('Could not find registered component "nonExistingService" for provider: $provide');
             });
 
@@ -122,14 +122,15 @@ describe('moduleIntrospector service', function() {
                 });
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
 
-                    expect(result).toBeTruthy();
-                    expect(result.providerMethod).toBe('constant');
-                    expect(result.componentName).toBe('aService');
-                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.strippedDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.injectedServices).toEqual([]);
+                    expect(result.length).toBe(1);
+                    expect(result[0].providerMethod).toBe('constant');
+                    expect(result[0].componentName).toBe('aService');
+                    expect(result[0].rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].strippedDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].injectedServices).toEqual([]);
+                    expect(result[0].builtIn).toBe(false);
                 });
 
             });
@@ -230,14 +231,15 @@ describe('moduleIntrospector service', function() {
                 });
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
 
-                    expect(result).toBeTruthy();
-                    expect(result.providerMethod).toBe(expectedProviderMethod);
-                    expect(result.componentName).toBe('aService');
-                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.strippedDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.injectedServices).toEqual([]);
+                    expect(result.length).toBe(1);
+                    expect(result[0].providerMethod).toBe(expectedProviderMethod);
+                    expect(result[0].componentName).toBe('aService');
+                    expect(result[0].rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].strippedDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].injectedServices).toEqual([]);
+                    expect(result[0].builtIn).toBe(false);
                 });
 
             });
@@ -343,14 +345,15 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
 
-                    expect(result).toBeTruthy();
-                    expect(result.providerMethod).toBe(expectedProviderMethod);
-                    expect(result.componentName).toBe('aService');
-                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
-                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result.length).toBe(1);
+                    expect(result[0].providerMethod).toBe(expectedProviderMethod);
+                    expect(result[0].componentName).toBe('aService');
+                    expect(result[0].rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result[0].injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result[0].builtIn).toEqual(false);
                 });
 
             });
@@ -456,14 +459,15 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', 'aService');
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
 
-                    expect(result).toBeTruthy();
-                    expect(result.providerMethod).toBe(expectedProviderMethod);
-                    expect(result.componentName).toBe('aService');
-                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
-                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result.length).toBe(1);
+                    expect(result[0].providerMethod).toBe(expectedProviderMethod);
+                    expect(result[0].componentName).toBe('aService');
+                    expect(result[0].rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result[0].injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result[0].builtIn).toBe(false);
                 });
 
             });
@@ -683,15 +687,15 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result =
-                        moduleIntrospectorFactory('aModule').getProviderComponentDeclaration('$provide', expectedComponentName);
+                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', expectedComponentName);
 
-                    expect(result).toBeTruthy();
-                    expect(result.providerMethod).toBe(expectedProviderMethod);
-                    expect(result.componentName).toBe(expectedComponentName);
-                    expect(result.rawDeclaration).toBe(expectedRawDeclaration);
-                    expect(result.strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
-                    expect(result.injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result.length).toBe(1);
+                    expect(result[0].providerMethod).toBe(expectedProviderMethod);
+                    expect(result[0].componentName).toBe(expectedComponentName);
+                    expect(result[0].rawDeclaration).toBe(expectedRawDeclaration);
+                    expect(result[0].strippedDeclaration).toBe(expectedStrippedDeclaration || expectedRawDeclaration);
+                    expect(result[0].injectedServices).toEqual(expectedInjectedServices || []);
+                    expect(result[0].builtIn).toEqual(false);
                 });
 
             });
@@ -703,23 +707,21 @@ describe('moduleIntrospector service', function() {
         describe('for $filterProvider', function() {
             it('should throw exception for non-existing filter', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule')
-                        .getProviderComponentDeclaration('$filterProvider', 'aNonExistingFilter');
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'aNonExistingFilter');
                 }).toThrow('Could not find registered component "aNonExistingFilter" for provider: $filterProvider');
             });
 
             it('should return built-in (from "ng" module) filter', function() {
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$filterProvider', 'currency');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'currency');
 
-                expect(result).toBeTruthy();
-                expect(result.providerMethod).toBe('register');
-                expect(result.componentName).toBe('currency');
-                expect(angular.isFunction(result.rawDeclaration)).toBe(true);
-                expect(result.rawDeclaration.$inject).toEqual(['$locale']);
-                expect(result.strippedDeclaration).toBe(result.rawDeclaration);
-                expect(result.injectedServices).toEqual(['$locale']);
-                expect(result.builtIn).toBe(true);
+                expect(result.length).toBe(1);
+                expect(result[0].providerMethod).toBe('register');
+                expect(result[0].componentName).toBe('currency');
+                expect(angular.isFunction(result[0].rawDeclaration)).toBe(true);
+                expect(result[0].rawDeclaration.$inject).toEqual(['$locale']);
+                expect(result[0].strippedDeclaration).toBe(result[0].rawDeclaration);
+                expect(result[0].injectedServices).toEqual(['$locale']);
+                expect(result[0].builtIn).toBe(true);
             });
 
             it('should return declared filter', function() {
@@ -729,17 +731,16 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.filter('aFilter', filterFactory);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$filterProvider', 'aFilter');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'aFilter');
 
-                expect(result).toEqual({
+                expect(result).toEqual([{
                     providerMethod: 'register',
                     componentName: 'aFilter',
                     rawDeclaration: filterFactory,
                     strippedDeclaration: filterFactory[2],
                     injectedServices: filterFactory.slice(0, 2),
                     builtIn: false
-                });
+                }]);
             });
         });
 
@@ -748,10 +749,8 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing controller', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule')
-                        .getProviderComponentDeclaration('$controllerProvider', 'aNonExistingController');
-                }).toThrow('Could not find registered component "aNonExistingController" for provider: ' +
-                        '$controllerProvider');
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$controllerProvider', 'aNonExistingController');
+                }).toThrow('Could not find registered component "aNonExistingController" for provider: $controllerProvider');
             });
 
             it('should return declared controller', function() {
@@ -760,17 +759,16 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.controller('aController', controllerConstructor);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$controllerProvider', 'aController');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$controllerProvider', 'aController');
 
-                expect(result).toEqual({
+                expect(result).toEqual([{
                     providerMethod: 'register',
                     componentName: 'aController',
                     rawDeclaration: controllerConstructor,
                     strippedDeclaration: controllerConstructor[2],
                     injectedServices: controllerConstructor.slice(0, 2),
                     builtIn: false
-                });
+                }]);
             });
         });
 
@@ -779,29 +777,26 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing directive', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule')
-                        .getProviderComponentDeclaration('$compileProvider', 'aNonExistingDirective');
-                }).toThrow('Could not find registered component "aNonExistingDirective" for provider: ' +
-                        '$compileProvider');
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'aNonExistingDirective');
+                }).toThrow('Could not find registered component "aNonExistingDirective" for provider: $compileProvider');
             });
 
             it('should return built-in (from "ng" module) directive', function() {
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$compileProvider', 'option');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'option');
 
-                expect(result).toBeTruthy();
-                expect(result.providerMethod).toBe('directive');
-                expect(result.componentName).toBe('option');
-                expect(angular.isArray(result.rawDeclaration)).toBe(true);
-                expect(result.rawDeclaration.length).toBe(2);
-                expect(result.rawDeclaration[0]).toBe('$interpolate');
-                expect(angular.isFunction(result.rawDeclaration[1])).toBe(true);
-                expect(result.strippedDeclaration).toBe(result.rawDeclaration[1]);
-                expect(result.injectedServices).toEqual(['$interpolate']);
-                expect(result.builtIn).toBe(true);
+                expect(result.length).toBe(1);
+                expect(result[0].providerMethod).toBe('directive');
+                expect(result[0].componentName).toBe('option');
+                expect(angular.isArray(result[0].rawDeclaration)).toBe(true);
+                expect(result[0].rawDeclaration.length).toBe(2);
+                expect(result[0].rawDeclaration[0]).toBe('$interpolate');
+                expect(angular.isFunction(result[0].rawDeclaration[1])).toBe(true);
+                expect(result[0].strippedDeclaration).toBe(result[0].rawDeclaration[1]);
+                expect(result[0].injectedServices).toEqual(['$interpolate']);
+                expect(result[0].builtIn).toBe(true);
             });
 
-            it('should return declared directive', function() {
+            it('should return directive that was declared only once', function() {
                 var directiveLinkFn = jasmine.createSpy();
 
                 var directiveDeclaration = ['anotherService', '$http', function() {
@@ -810,12 +805,34 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.directive('aDirective', directiveDeclaration);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$compileProvider', 'aDirective');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'aDirective');
 
-                expect(result).toEqual({
+                expect(result).toEqual([{
                     providerMethod: 'directive',
                     componentName: 'aDirective',
+                    rawDeclaration: directiveDeclaration,
+                    strippedDeclaration: directiveDeclaration[2],
+                    injectedServices: directiveDeclaration.slice(0, 2),
+                    builtIn: false
+                }]);
+            });
+
+            it('should return directive with multiple declarations', function() {
+                var directiveLinkFn = jasmine.createSpy();
+
+                var directiveDeclaration = ['anotherService', '$http', function() {
+                    return directiveLinkFn;
+                }];
+
+                moduleInstance.directive('input', directiveDeclaration);
+
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'input');
+
+                expect(result.length).toBe(2);
+                expect(result[0].builtIn).toBe(true);
+                expect(result[1]).toEqual({
+                    providerMethod: 'directive',
+                    componentName: 'input',
                     rawDeclaration: directiveDeclaration,
                     strippedDeclaration: directiveDeclaration[2],
                     injectedServices: directiveDeclaration.slice(0, 2),
@@ -829,10 +846,8 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing animation', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                            '$animateProvider', 'aNonExistingAnimation');
-                }).toThrow('Could not find registered component "aNonExistingAnimation" for provider: ' +
-                        '$animateProvider');
+                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$animateProvider', 'aNonExistingAnimation');
+                }).toThrow('Could not find registered component "aNonExistingAnimation" for provider: $animateProvider');
             });
 
             it('should return declared animation', function() {
@@ -844,17 +859,16 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.animation('.anAnimation', animationDeclaration);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclaration(
-                        '$animateProvider', '.anAnimation');
+                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$animateProvider', '.anAnimation');
 
-                expect(result).toEqual({
+                expect(result).toEqual([{
                     providerMethod: 'register',
                     componentName: '.anAnimation',
                     rawDeclaration: animationDeclaration,
                     strippedDeclaration: animationDeclaration[2],
                     injectedServices: animationDeclaration.slice(0, 2),
                     builtIn: false
-                });
+                }]);
             });
         });
 
