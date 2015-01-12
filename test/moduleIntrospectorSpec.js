@@ -88,7 +88,7 @@ describe('moduleIntrospector service', function() {
 
         it('should throw exception for unknown provider name', function() {
             expect(function() {
-                moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('anUnknownProvider', 'aComponentName');
+                moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('anUnknownProvider', 'aComponentName');
             }).toThrow('Could not find registered component "aComponentName" for provider: anUnknownProvider');
         });
 
@@ -97,7 +97,7 @@ describe('moduleIntrospector service', function() {
 
             it('should throw an exception for a non existing service', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'nonExistingService');
+                    moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', 'nonExistingService');
                 }).toThrow('Could not find registered component "nonExistingService" for provider: $provide');
             });
 
@@ -122,7 +122,7 @@ describe('moduleIntrospector service', function() {
                 });
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
+                    var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', 'aService');
 
                     expect(result.length).toBe(1);
                     expect(result[0].providerMethod).toBe('constant');
@@ -231,7 +231,7 @@ describe('moduleIntrospector service', function() {
                 });
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
+                    var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', 'aService');
 
                     expect(result.length).toBe(1);
                     expect(result[0].providerMethod).toBe(expectedProviderMethod);
@@ -345,7 +345,7 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
+                    var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', 'aService');
 
                     expect(result.length).toBe(1);
                     expect(result[0].providerMethod).toBe(expectedProviderMethod);
@@ -459,7 +459,7 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', 'aService');
+                    var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', 'aService');
 
                     expect(result.length).toBe(1);
                     expect(result[0].providerMethod).toBe(expectedProviderMethod);
@@ -687,7 +687,7 @@ describe('moduleIntrospector service', function() {
 
 
                 afterEach(function() {
-                    var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$provide', expectedComponentName);
+                    var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$provide', expectedComponentName);
 
                     expect(result.length).toBe(1);
                     expect(result[0].providerMethod).toBe(expectedProviderMethod);
@@ -707,12 +707,12 @@ describe('moduleIntrospector service', function() {
         describe('for $filterProvider', function() {
             it('should throw exception for non-existing filter', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'aNonExistingFilter');
+                    moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$filterProvider', 'aNonExistingFilter');
                 }).toThrow('Could not find registered component "aNonExistingFilter" for provider: $filterProvider');
             });
 
             it('should return built-in (from "ng" module) filter', function() {
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'currency');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$filterProvider', 'currency');
 
                 expect(result.length).toBe(1);
                 expect(result[0].providerMethod).toBe('register');
@@ -731,7 +731,7 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.filter('aFilter', filterFactory);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$filterProvider', 'aFilter');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$filterProvider', 'aFilter');
 
                 expect(result).toEqual([{
                     providerMethod: 'register',
@@ -749,7 +749,8 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing controller', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$controllerProvider', 'aNonExistingController');
+                    moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations(
+                            '$controllerProvider', 'aNonExistingController');
                 }).toThrow('Could not find registered component "aNonExistingController" for provider: $controllerProvider');
             });
 
@@ -759,7 +760,7 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.controller('aController', controllerConstructor);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$controllerProvider', 'aController');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$controllerProvider', 'aController');
 
                 expect(result).toEqual([{
                     providerMethod: 'register',
@@ -777,12 +778,12 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing directive', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'aNonExistingDirective');
+                    moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'aNonExistingDirective');
                 }).toThrow('Could not find registered component "aNonExistingDirective" for provider: $compileProvider');
             });
 
             it('should return built-in (from "ng" module) directive', function() {
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'option');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'option');
 
                 expect(result.length).toBe(1);
                 expect(result[0].providerMethod).toBe('directive');
@@ -805,7 +806,7 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.directive('aDirective', directiveDeclaration);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'aDirective');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'aDirective');
 
                 expect(result).toEqual([{
                     providerMethod: 'directive',
@@ -826,7 +827,7 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.directive('input', directiveDeclaration);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$compileProvider', 'input');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'input');
 
                 expect(result.length).toBe(2);
                 expect(result[0].builtIn).toBe(true);
@@ -846,7 +847,7 @@ describe('moduleIntrospector service', function() {
 
             it('should throw exception for non-existing animation', function() {
                 expect(function() {
-                    moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$animateProvider', 'aNonExistingAnimation');
+                    moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$animateProvider', 'aNonExistingAnimation');
                 }).toThrow('Could not find registered component "aNonExistingAnimation" for provider: $animateProvider');
             });
 
@@ -859,7 +860,7 @@ describe('moduleIntrospector service', function() {
 
                 moduleInstance.animation('.anAnimation', animationDeclaration);
 
-                var result = moduleIntrospectorFactory('aModule').getProviderComponentDeclarations('$animateProvider', '.anAnimation');
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$animateProvider', '.anAnimation');
 
                 expect(result).toEqual([{
                     providerMethod: 'register',
@@ -872,6 +873,59 @@ describe('moduleIntrospector service', function() {
             });
         });
 
+
+        it('should include an additional module', function() {
+            var factoryFn = function() {
+                return {};
+            };
+            var annotatedFactoryFn = ['$http', factoryFn];
+
+            angular.module('anAdditionalModule', [])
+                .factory('serviceFromAdditionalModule', annotatedFactoryFn);
+
+            expect(moduleIntrospectorFactory(['aModule', 'anAdditionalModule']).getProviderComponentDeclarations(
+                    '$provide', 'serviceFromAdditionalModule')).toEqual([
+                    {
+                        providerMethod: 'factory',
+                        componentName: 'serviceFromAdditionalModule',
+                        rawDeclaration: annotatedFactoryFn,
+                        strippedDeclaration : factoryFn,
+                        injectedServices: ['$http'],
+                        builtIn: false
+                    }]);
+        });
+
+        it('should include key - value pairs provided as an object', function() {
+            var moduleIntrospector = moduleIntrospectorFactory(['aModule', {aKey1: 'aValue1', aKey2: 'aValue2'}]);
+
+            expect(moduleIntrospector.getProviderComponentDeclarations('$provide', 'aKey1')).toEqual([{
+                        providerMethod: 'value', componentName: 'aKey1', rawDeclaration: 'aValue1', strippedDeclaration : 'aValue1',
+                        injectedServices: [], builtIn: false
+                    }]);
+            expect(moduleIntrospector.getProviderComponentDeclarations('$provide', 'aKey2')).toEqual([{
+                        providerMethod: 'value', componentName: 'aKey2', rawDeclaration: 'aValue2', strippedDeclaration : 'aValue2',
+                        injectedServices: [], builtIn: false
+                    }]);
+
+        });
+
+        it('should return service instance of provider registered in config fn', function() {
+            var stripped$GetMethod = function() {
+                return {};
+            };
+            var annotated$GetMethod = ['$http', stripped$GetMethod];
+            var moduleIntrospector = moduleIntrospectorFactory(['aModule', function($provide) {
+                    $provide.provider('aProviderRegisteredInConfigFn', {
+                        $get: annotated$GetMethod
+                    });
+                }]);
+
+            expect(moduleIntrospector.getProviderComponentDeclarations('$provide', 'aProviderRegisteredInConfigFn')).toEqual([
+                    {
+                        providerMethod: 'provider', componentName: 'aProviderRegisteredInConfigFn', rawDeclaration: annotated$GetMethod,
+                        strippedDeclaration: stripped$GetMethod, injectedServices: ['$http'], builtIn: false
+                    }]);
+        });
     });
 
 
@@ -879,14 +933,14 @@ describe('moduleIntrospector service', function() {
     describe('getProviderDeclaration method', function() {
         it('should throw exception for unknown provider name', function() {
             expect(function() {
-                moduleIntrospectorFactory('aModule').getProviderDeclaration('anUnknownProvider');
+                moduleIntrospectorFactory(['aModule']).getProviderDeclaration('anUnknownProvider');
             }).toThrow('Could not find provider: anUnknownProvider');
         });
 
         it('should return provider object', function() {
             moduleInstance.provider('aService', originalProviderObject);
 
-            expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+            expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                 rawDeclaration: originalProviderObject,
                 strippedDeclaration: originalProviderObject,
                 injectedProviders: [],
@@ -899,7 +953,7 @@ describe('moduleIntrospector service', function() {
                 moduleInstance.provider('aService',
                         originalProviderConstructor[originalProviderConstructor.length - 1]);
 
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
                     injectedProviders: ['$provide', '$compileProvider'],
@@ -910,7 +964,7 @@ describe('moduleIntrospector service', function() {
             it('when its annotated', function() {
                 moduleInstance.provider('aService', originalProviderConstructor);
 
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor,
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
                     injectedProviders: ['$provide', '$compileProvider'],
@@ -924,7 +978,7 @@ describe('moduleIntrospector service', function() {
             afterEach(function() {
                 moduleInstance.provider('aService', originalProviderObject);
 
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderObject,
                     strippedDeclaration: originalProviderObject,
                     injectedProviders: [],
@@ -982,7 +1036,7 @@ describe('moduleIntrospector service', function() {
             afterEach(function() {
                 moduleInstance.provider('aService', overriddenProviderConstructor);
 
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: overriddenProviderConstructor,
                     strippedDeclaration: overriddenProviderConstructor[originalProviderConstructor.length - 1],
                     injectedProviders: ['$provide', '$compileProvider'],
@@ -1046,7 +1100,7 @@ describe('moduleIntrospector service', function() {
             });
 
             it('and register the first', function() {
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('aServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('aServiceProvider')).toEqual({
                     rawDeclaration: originalProviderConstructor,
                     strippedDeclaration: originalProviderConstructor[originalProviderConstructor.length - 1],
                     injectedProviders: ['$provide', '$compileProvider'],
@@ -1055,7 +1109,7 @@ describe('moduleIntrospector service', function() {
             });
 
             it('and register the second', function() {
-                expect(moduleIntrospectorFactory('aModule').getProviderDeclaration('anotherServiceProvider')).toEqual({
+                expect(moduleIntrospectorFactory(['aModule']).getProviderDeclaration('anotherServiceProvider')).toEqual({
                     rawDeclaration: overriddenProviderConstructor,
                     strippedDeclaration: overriddenProviderConstructor[overriddenProviderConstructor.length - 1],
                     injectedProviders: ['$provide', '$compileProvider'],
@@ -1064,6 +1118,25 @@ describe('moduleIntrospector service', function() {
             });
         });
 
+
+        it('should return provider registered in config fn', function() {
+            var ProviderConstructor = function() {
+                this.$get = function() {
+                    return {};
+                };
+            };
+            var annotatedProviderFactoryFn = ['$httpProvider', ProviderConstructor];
+
+            var moduleIntrospector = moduleIntrospectorFactory(['aModule', function($provide) {
+                    $provide.provider('aProviderRegisteredInConfigFn', annotatedProviderFactoryFn);
+                }]);
+
+            expect(moduleIntrospector.getProviderDeclaration('aProviderRegisteredInConfigFnProvider')).toEqual(
+                    {
+                        rawDeclaration: annotatedProviderFactoryFn, strippedDeclaration: ProviderConstructor,
+                        injectedProviders: ['$httpProvider'], builtIn: false
+                    });
+        });
     });
 
 
@@ -1085,7 +1158,7 @@ describe('moduleIntrospector service', function() {
                     }
                 });
 
-            moduleIntrospector = moduleIntrospectorFactory('aModule');
+            moduleIntrospector = moduleIntrospectorFactory(['aModule']);
         });
 
 
@@ -1126,7 +1199,7 @@ describe('moduleIntrospector service', function() {
         var moduleIntrospector;
 
         beforeEach(function() {
-            moduleIntrospector = moduleIntrospectorFactory('aModule');
+            moduleIntrospector = moduleIntrospectorFactory(['aModule']);
         });
 
 
