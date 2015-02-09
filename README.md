@@ -9,20 +9,21 @@ Currently ngModelIntrospector only allows retrieving a specific:
 
 The ngModuleIntrospector library declare a single AngularJS module called "ngModuleIntrospector".
 This AngularJS module consists of only one service and one type:
- - `moduleIntrospector` factory method: returns an instance of the ModuleIntrospector type for the provided module name.<br>
+ - `moduleIntrospector` factory method: returns an instance of the ModuleIntrospector type for the provided array of modules just like with `angular.mock.module`; a module can be either a module name, a module configuration function of an object literal with service instances<br>
    An optional second argument called "includeNgMock" (with a default value of `false`) allows specifying if components registered by "ngMock" should be included or not.
  - `ModuleIntrospector` type: consists of only two public methods:
-    - `getProviderComponentDeclaration`: returns the declaration of registerd component of a provider.<br>
+    - `getProviderComponentDeclarations`: returns the component declarations of a provider with same name as the component name argument.<br>
       This method can be used for both built-in (ng module) components as well a custom ones.<br>
-      I.e. invoking `.getProviderComponentDeclaration('$provide', '$document')` will return:<br>
+      I.e. invoking `.getProviderComponentDeclarations('$provide', '$document')` will return:<br>
       
-          {
+          [{
               providerMethod: 'provider',
               componentName: '$document',
               rawDeclaration: ['$window', function (window) { ... }],
               strippedDeclaration: function (window) { ... },
-              injectedServices: ['$window']
-          }
+              injectedServices: ['$window'],
+              builtIn: true
+          }]
 
     - `getProviderDeclaration`: returns the declaration of a provider.<br>
       This method can be used for both built-in (ng module) components as well a custom providers.<br>
@@ -31,13 +32,18 @@ This AngularJS module consists of only one service and one type:
           {
               rawDeclaration: function $FilterProvider($provide) { ... },
               strippedDeclaration: function $FilterProvider($provide) { ... },
-              injectedProviders: ['$provide']
+              injectedProviders: ['$provide'],
+              builtIn: true
           }
 
 Changes
 -------
 0.3.0
- - TODO:
+ - The `moduleIntrospector` can now be provided with multiple module just like `angular.mock.module`.
+ - Internally always includes the ngMock module to always be able to introspect a module;
+   however ngModuleIntrospector will only return services from the ngMock module when `includeNgMock` (second argument of the `moduleIntrospector` service) is true.
+ - renamed `getProviderComponentDeclaration` to `getProviderComponentDeclarations` and changed it to returned an array with possibly multiple element; in reality only the '$compileProvider` can return more than one element (when multiple directives with the same name are declared).
+ - each provider component declaration and provider declaration has an additional boolean property `builtIn` that indicate if its a built in declaration; to indicate it's declared in the 'ng' module or the 'ngMock' module (should only occur when `includeNgMock` is true)
 
 0.2.0
  - AngularJS 1.0.x is no longer supported
