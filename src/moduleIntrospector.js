@@ -11,14 +11,21 @@
  */
 
 
+function assertTruthy(value, message) {
+    if (!value) {
+        throw new Error(message);
+    }
+}
+
+
 /**
  * @ngdoc type
- * @param {...string} moduleNames
+ * @param {Array.<(string|Function|Object)>} modules
+ * @param {boolean} [includeNgMock = false]
  * @constructor
  */
-function ModuleIntrospector(moduleNames) {
-    moduleNames = Array.prototype.slice.call(arguments, 0);
-
+function ModuleIntrospector(modules, includeNgMock) {
+    includeNgMock = includeNgMock || false;
 
     /**
      * @param {object} providerInstance
@@ -90,21 +97,39 @@ function ModuleIntrospector(moduleNames) {
      * @param {*} strippedDeclaration
      * @param {string[]} injectedServices
      */
-    function registerComponent(
+    function registerComponentDeclaration(
             providerName, providerMethod, componentName, rawDeclaration, strippedDeclaration, injectedServices) {
-        var registeredComponents = registeredComponentsPerProviderName[providerName];
-        if (!registeredComponents) {
-            registeredComponents = {};
-            registeredComponentsPerProviderName[providerName] = registeredComponents;
+        if (forgetFutureRegisteredComponents) {
+            return;
         }
 
-        registeredComponents[componentName] = {
+        var allComponentDeclarationsOfProvider = componentDeclarationsPerComponentNamePerProviderName[providerName];
+        if (!allComponentDeclarationsOfProvider) {
+            allComponentDeclarationsOfProvider = {};
+            componentDeclarationsPerComponentNamePerProviderName[providerName] = allComponentDeclarationsOfProvider;
+        }
+
+        var componentDeclarations = allComponentDeclarationsOfProvider[componentName];
+        if (!componentDeclarations) {
+            componentDeclarations = [];
+
+            allComponentDeclarationsOfProvider[componentName] = componentDeclarations;
+        }
+
+        var registeredComponentDeclaration = {
             providerMethod: providerMethod,
             componentName: componentName,
             rawDeclaration: rawDeclaration,
             strippedDeclaration: strippedDeclaration,
-            injectedServices: injectedServices
+            injectedServices: injectedServices,
+            builtIn: processingBuiltInComponents
         };
+
+        if (metadataPerProvider[providerName].overridesEarlierRegistrations) {
+            componentDeclarations.length = 0;
+        }
+
+        componentDeclarations.push(registeredComponentDeclaration);
     }
 
     /**
@@ -112,27 +137,35 @@ function ModuleIntrospector(moduleNames) {
      * @returns {boolean}
      */
     function existingConstantService(serviceName) {
-        var registeredServices = registeredComponentsPerProviderName.$provide;
-        if (!registeredServices) {
+        var serviceDeclarationsPerServiceName = componentDeclarationsPerComponentNamePerProviderName.$provide;
+        if (!serviceDeclarationsPerServiceName) {
             return false;
         }
 
-        var registeredService = registeredServices[serviceName];
-        return !!registeredService && registeredService.providerMethod === 'constant';
+        var serviceDeclarations = serviceDeclarationsPerServiceName[serviceName];
+        assertTruthy(!serviceDeclarations || serviceDeclarations.length <= 1,
+                'Only one service declaration should exist for a service name: ' + serviceName);
+
+        return !!serviceDeclarations && serviceDeclarations.length === 1 &&
+                serviceDeclarations[0].providerMethod === 'constant';
     }
 
     /**
-     * @param {string} serviceProviderName
+     * @param {string} providerName
      * @param {RawProviderDeclaration} rawDeclaration
      * @param {StrippedProviderDeclaration} strippedDeclaration
      * @param {string[]} injectedProviders
      */
-    function registerServiceProviderDeclaration(
-            serviceProviderName, rawDeclaration, strippedDeclaration, injectedProviders) {
-        serviceProviderDeclarationPerProviderName[serviceProviderName] = {
+    function registerProviderDeclaration(providerName, rawDeclaration, strippedDeclaration, injectedProviders) {
+        if (forgetFutureRegisteredComponents) {
+            return;
+        }
+
+        providerDeclarationPerProviderName[providerName] = {
                 rawDeclaration: rawDeclaration,
                 strippedDeclaration: strippedDeclaration,
-                injectedProviders: injectedProviders
+                injectedProviders: injectedProviders,
+                builtIn: processingBuiltInComponents
             };
     }
 
@@ -142,15 +175,12 @@ function ModuleIntrospector(moduleNames) {
                 var suffix = 'Filter';
 
                 var endsWithFilterSuffix = name.indexOf(suffix, name.length - suffix.length) !== -1;
-                if (!endsWithFilterSuffix) {
-                    throw 'Unexpected registered factory: ' + name;
-                }
+                assertTruthy(endsWithFilterSuffix, 'Unexpected registered factory: ' + name);
 
-                var providerName = '$filterProvider';
-                var filterProviderRegistrationMethodName = registrationMethodPerProvider[providerName];
+                var filterProviderRegistrationMethodName = metadataPerProvider.$filterProvider.providerMethods[0];
                 var nameWithoutSuffix = name.substring(0, name.length - suffix.length);
 
-                registerComponent(providerName, filterProviderRegistrationMethodName, nameWithoutSuffix, getFn,
+                registerComponentDeclaration('$filterProvider', filterProviderRegistrationMethodName, nameWithoutSuffix, getFn,
                     stripAnnotations(getFn), determineDependencies(getFn));
             }
         };
@@ -161,39 +191,61 @@ function ModuleIntrospector(moduleNames) {
 
 
     /**
-     * @type {
-     *  Object.<
-     *      Object.<{
-     *          providerMethod: string,
-     *          componentName: string,
-     *          rawDeclaration: *,
-     *          strippedDeclaration: *,
-     *          injectedServices: string[]
-     *      }>
+     * @type {Object.<
+     *      Object.<
+     *          Array.<{
+     *              providerMethod: string,
+     *              componentName: string,
+     *              rawDeclaration: *,
+     *              strippedDeclaration: *,
+     *              injectedServices: string[],
+     *              builtIn: boolean
+     *          }>
+     *      >
      *  >}
      */
-    var registeredComponentsPerProviderName = {};
+    var componentDeclarationsPerComponentNamePerProviderName = {};
 
     /**
       * @type {Object.<{
       *     rawDeclaration: RawProviderDeclaration,
       *     strippedDeclaration: StrippedProviderDeclaration,
-      *     injectedProviders: string[]
+      *     injectedProviders: string[],
+      *     builtIn: boolean
       *  }>}
       */
-    var serviceProviderDeclarationPerProviderName = {};
+    var providerDeclarationPerProviderName = {};
 
-    var registrationMethodPerProvider = {
-        $filterProvider: 'register',
-        $controllerProvider: 'register',
-        $compileProvider: 'directive',
-        $animateProvider: 'register'
+    var metadataPerProvider = {
+        $provide: {
+            providerMethods: ['constant', 'value', 'service', 'factory', 'provider'],
+            overridesEarlierRegistrations: true
+        },
+        $filterProvider: {
+            providerMethods: ['register'],
+            overridesEarlierRegistrations: true
+        },
+        $controllerProvider: {
+            providerMethods: ['register'],
+            overridesEarlierRegistrations: true
+        },
+        $compileProvider: {
+            providerMethods: ['directive'],
+            overridesEarlierRegistrations: false
+        },
+        $animateProvider: {
+            providerMethods: ['register'],
+            overridesEarlierRegistrations: true
+        }
     };
 
     var emptyInjector = angular.injector([]);
 
     var providerInjector = null;
 
+    var processingBuiltInComponents = false;
+
+    var forgetFutureRegisteredComponents = false;
 
     /** @ngInject */
     var providerInjectorCapturingConfigFn = function ($injector) {
@@ -203,7 +255,7 @@ function ModuleIntrospector(moduleNames) {
     /** @ngInject */
     var $provideMethodsHookConfigFn = function($provide) {
 
-        var registerService = angular.bind(undefined, registerComponent, '$provide');
+        var registerService = angular.bind(undefined, registerComponentDeclaration, '$provide');
 
 
         afterProviderMethodExecution($provide, 'constant', function(/** string */ name, value) {
@@ -240,7 +292,7 @@ function ModuleIntrospector(moduleNames) {
             var isProviderObject = angular.isObject(provider) && !angular.isArray(provider);
             var strippedProviderDeclaration = !isProviderObject ? stripAnnotations(provider) : provider;
             var injectedProviders = !isProviderObject ? determineDependencies(provider) : [];
-            registerServiceProviderDeclaration(providerName, provider, strippedProviderDeclaration, injectedProviders);
+            registerProviderDeclaration(providerName, provider, strippedProviderDeclaration, injectedProviders);
 
             var providerInstance = providerInjector.get(providerName);
 
@@ -252,52 +304,97 @@ function ModuleIntrospector(moduleNames) {
             }
 
 
-            var registrationMethodOfProvider = registrationMethodPerProvider[providerName];
-            if (registrationMethodOfProvider) {
-                afterProviderMethodExecution(providerInstance, registrationMethodOfProvider, function(
+            var providerMetadata = metadataPerProvider[providerName];
+            var providerMethodsOfProvider = providerMetadata && providerMetadata.providerMethods;
+            if (providerMethodsOfProvider) {
+                angular.forEach(providerMethodsOfProvider, function(providerMethodOfProvider) {
+                    afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
                         /** string */ name, /** PossiblyAnnotatedFn */ rawDeclaration) {
-                    registerComponent(providerName, registrationMethodOfProvider, name, rawDeclaration,
+                        registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
                             stripAnnotations(rawDeclaration), determineDependencies(rawDeclaration));
+                    });
                 });
             }
         });
     };
 
+    /**
+     * @param {boolean} b
+     * @returns {function()}
+     */
+    var setProcessingBuiltInComponentsTo = function(b) {
+        return function() {
+            processingBuiltInComponents = b;
+        };
+    };
+
+    /**
+     * @param {boolean} b
+     * @returns {function()}
+     */
+    var setForgetFutureRegisteredComponents = function(b) {
+        return function() {
+            forgetFutureRegisteredComponents = b;
+        };
+    };
+
+    var injectorModules = [];
+
+    angular.forEach(modules, function(currentModule) {
+        if (angular.isObject(currentModule) && !angular.isArray(currentModule)) {
+            injectorModules.push(function($provide) {
+                angular.forEach(currentModule, function(value, key) {
+                    $provide.value(key, value);
+                });
+            });
+        } else {
+            injectorModules.push(currentModule);
+        }
+    });
 
     // create an injector that first captures the "providerInjector", then hooks the $provide methods,
     // after that loads the ng module and finally loads the modules of moduleNames.
-    angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn, 'ng'].concat(moduleNames));
+    angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn,
+            setProcessingBuiltInComponentsTo(true), 'ng',
+            setForgetFutureRegisteredComponents(!includeNgMock), 'ngMock', setForgetFutureRegisteredComponents(false),
+            setProcessingBuiltInComponentsTo(false)].concat(injectorModules));
 
 
     /**
      * @param {string} providerName
      * @param {string} componentName
-     * @returns {{
+     * @returns {Array.<{
      *      providerMethod: string,
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
-     *      injectedServices: string[]
-     *  }}
+     *      injectedServices: string[],
+     *      builtIn: boolean
+     *  }>}
      */
-    this.getProviderComponentDeclaration = function(providerName, componentName) {
-        var registeredComponents = registeredComponentsPerProviderName[providerName];
+    this.getProviderComponentDeclarations = function(providerName, componentName) {
+        var allComponentDeclarationsForProvider = componentDeclarationsPerComponentNamePerProviderName[providerName];
 
-        var registeredComponent = registeredComponents && registeredComponents[componentName];
-        if (!registeredComponent) {
+        var result = allComponentDeclarationsForProvider && allComponentDeclarationsForProvider[componentName];
+        if (!result) {
             throw 'Could not find registered component "' + componentName + '" for provider: ' + providerName;
         }
 
-        return registeredComponent;
+        return result;
     };
 
 
     /**
      * @param {string} providerName
-     * @returns {{rawDeclaration: RawProviderDeclaration, strippedDeclaration: StrippedProviderDeclaration, injectedProviders: string[]}}
+     * @returns {{
+     *      rawDeclaration: RawProviderDeclaration,
+     *      strippedDeclaration: StrippedProviderDeclaration,
+     *      injectedProviders: string[],
+     *      builtIn: boolean
+     *  }}
      */
     this.getProviderDeclaration = function(providerName) {
-        var result = serviceProviderDeclarationPerProviderName[providerName];
+        var result = providerDeclarationPerProviderName[providerName];
         if (!result) {
             throw 'Could not find provider: ' + providerName;
         }
@@ -306,6 +403,29 @@ function ModuleIntrospector(moduleNames) {
         return result; //TODO: investigate with WebStorm complains about incompatible types
     };
 
+    /**
+     * @returns {string[]}
+     */
+    this.getBuiltInProviderNames = function() {
+        var result = [];
+
+        for (var providerName in providerDeclarationPerProviderName) {
+            if (providerDeclarationPerProviderName.hasOwnProperty(providerName) &&
+                    providerDeclarationPerProviderName[providerName].builtIn) {
+                result.push(providerName);
+            }
+        }
+
+        return result;
+    };
+
+    /**
+     * @param {string} providerName
+     * @returns {?{providerMethods: string[], overridesEarlierRegistrations: boolean}}
+     */
+    this.getProviderMetadata = function(providerName) {
+        return metadataPerProvider[providerName] || null;
+    };
 }
 
 
@@ -315,11 +435,12 @@ angular.module('ngModuleIntrospector')
         /**
          * @ngdoc service
          * @name moduleIntrospector
-         * @param {...string} modules
+         * @param {Array.<(string|Function|Object)>} modules
+         * @params {boolean} includeNgMock
          * @returns {ModuleIntrospector}
          * @function
          */
-        return function moduleIntrospector(modules) {
-            return new ModuleIntrospector(modules);
+        return function moduleIntrospector(modules, includeNgMock) {
+            return new ModuleIntrospector(modules, includeNgMock);
         };
     });
