@@ -71,10 +71,10 @@ module.exports = function(grunt) {
                 }
             },
             angular_1_5: {
-                configFile: 'karma-angular-1.5-nightly.conf.js',
+                configFile: 'karma-angular-1.5.conf.js',
                 coverageReporter: {
                     type: 'lcov',
-                    dir: 'coverage/karma-angular-1.5-nightly'
+                    dir: 'coverage/karma-angular-1.5'
                 }
             }
         },
