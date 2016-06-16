@@ -1,4 +1,4 @@
-'use strict';
+import * as angular from 'angular';
 
 /**
  * @typedef {(Function|Array.<(string|Function)>)} PossiblyAnnotatedFn
@@ -204,7 +204,7 @@ function ModuleIntrospector(modules, includeNgMock) {
      *      >
      *  >}
      */
-    var componentDeclarationsPerComponentNamePerProviderName = {};
+    var componentDeclarationsPerComponentNamePerProviderName : any = {};
 
     /**
       * @type {Object.<{
@@ -429,18 +429,14 @@ function ModuleIntrospector(modules, includeNgMock) {
 }
 
 
-angular.module('ngModuleIntrospector')
-    .factory('moduleIntrospector', function() {
-
-        /**
-         * @ngdoc service
-         * @name moduleIntrospector
-         * @param {Array.<(string|Function|Object)>} modules
-         * @params {boolean} includeNgMock
-         * @returns {ModuleIntrospector}
-         * @function
-         */
-        return function moduleIntrospector(modules, includeNgMock) {
-            return new ModuleIntrospector(modules, includeNgMock);
-        };
-    });
+/**
+ * @ngdoc service
+ * @name moduleIntrospector
+ * @param {Array.<(string|Function|Object)>} modules
+ * @params {boolean} includeNgMock
+ * @returns {ModuleIntrospector}
+ * @function
+ */
+export function moduleIntrospector(modules, includeNgMock) {
+    return new ModuleIntrospector(modules, includeNgMock);
+};
