@@ -842,6 +842,10 @@ describe('moduleIntrospector service', function() {
             });
 
             it('should return options object for an AngularJS 1.5 `.component`', function() {
+                if (!moduleInstance.component) {
+                    return;
+                }
+
                 var componentControllerFn = jasmine.createSpy();
 
                 var componentDefinition = {

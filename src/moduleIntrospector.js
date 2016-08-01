@@ -335,15 +335,17 @@ function ModuleIntrospector(modules, includeNgMock) {
             if (name === '$compile') {
                 var $compileProviderDirectiveMethod = providerInstance.directive;
 
-                aroundExecution(providerInstance, 'component', function(proceed) {
-                    try {
-                        providerInstance.directive = angular.noop;
+                if (providerInstance.component) {
+                    aroundExecution(providerInstance, 'component', function(proceed) {
+                        try {
+                            providerInstance.directive = angular.noop;
 
-                        return proceed();
-                    } finally {
-                        providerInstance.directive = $compileProviderDirectiveMethod;
-                    }
-                });
+                            return proceed();
+                        } finally {
+                            providerInstance.directive = $compileProviderDirectiveMethod;
+                        }
+                    });
+                }
             }
             
 
@@ -351,16 +353,18 @@ function ModuleIntrospector(modules, includeNgMock) {
             var providerMethodsOfProvider = providerMetadata && providerMetadata.providerMethods;
             if (providerMethodsOfProvider) {
                 angular.forEach(providerMethodsOfProvider, function(providerMethodOfProvider) {
-                    afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
+                    if (providerInstance[providerMethodOfProvider]) {
+                        afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
                             /** string */ name, /** PossiblyAnnotatedFn */ rawDeclaration) {
-                        var strippedDeclaration = isPossiblyAnnotatedFn(rawDeclaration) ?
+                            var strippedDeclaration = isPossiblyAnnotatedFn(rawDeclaration) ?
                                 stripAnnotations(/** PossiblyAnnotatedFn */ rawDeclaration) : rawDeclaration;
-                        var injectedServices = isPossiblyAnnotatedFn(rawDeclaration) ?
+                            var injectedServices = isPossiblyAnnotatedFn(rawDeclaration) ?
                                 determineDependencies(/** PossiblyAnnotatedFn */ rawDeclaration) : [];
 
-                        registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
-                            strippedDeclaration, injectedServices);
-                    });
+                            registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
+                                strippedDeclaration, injectedServices);
+                        });
+                    }
                 });
             }
         });
