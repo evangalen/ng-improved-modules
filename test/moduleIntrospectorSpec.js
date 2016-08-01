@@ -840,6 +840,30 @@ describe('moduleIntrospector service', function() {
                     builtIn: false
                 });
             });
+
+            it('should return options object for an AngularJS 1.5 `.component`', function() {
+                var componentControllerFn = jasmine.createSpy();
+
+                var componentDefinition = {
+                    controller: [function () {
+                        return componentControllerFn;
+                    }]
+                };
+
+                moduleInstance.component('aNg15Component', componentDefinition);
+
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'aNg15Component');
+
+                expect(result).toEqual([{
+                    providerMethod: 'component',
+                    componentName: 'aNg15Component',
+                    rawDeclaration: componentDefinition,
+                    strippedDeclaration: componentDefinition,
+                    injectedServices: [],
+                    builtIn: false
+                }]);
+
+            });
         });
 
 
@@ -1222,7 +1246,7 @@ describe('moduleIntrospector service', function() {
 
         it('should return correct metadata for $compileProvider', function() {
             expect(moduleIntrospector.getProviderMetadata('$compileProvider'))
-                .toEqual({providerMethods: ['directive'], overridesEarlierRegistrations: false});
+                .toEqual({providerMethods: ['directive', 'component'], overridesEarlierRegistrations: false});
         });
 
         it('should return correct metadata for $animateProvider', function() {

@@ -33,7 +33,7 @@ function ModuleIntrospector(modules, includeNgMock) {
      * @param {function(string, *)} afterMethodLogic
      */
     function afterProviderMethodExecution(providerInstance, methodName, afterMethodLogic) {
-        return afterExecution(providerInstance, methodName, supportObject(afterMethodLogic));
+        afterExecution(providerInstance, methodName, supportObject(afterMethodLogic));
     }
 
     /**
@@ -67,6 +67,35 @@ function ModuleIntrospector(modules, includeNgMock) {
 
             return result;
         };
+    }
+
+    /**
+     * @param {object} object
+     * @param {string} methodeName
+     * @param {function(Function): *} aroundMethodLogic
+     */
+    function aroundExecution(object, methodName, aroundMethodLogic) {
+        var originalMethod = object[methodName];
+
+        object[methodName] = function() {
+            var that = this;
+
+            var originalArguments = arguments;
+
+            var proceed = function() {
+                return originalMethod.apply(that, originalArguments);
+            };
+
+            return aroundMethodLogic(proceed);
+        };
+    }
+
+    /**
+     * @param {*} value
+     * @returns {boolean}
+     */
+    function isPossiblyAnnotatedFn(value) {
+        return angular.isFunction(value) || angular.isArray(value);
     }
 
     /**
@@ -230,7 +259,7 @@ function ModuleIntrospector(modules, includeNgMock) {
             overridesEarlierRegistrations: true
         },
         $compileProvider: {
-            providerMethods: ['directive'],
+            providerMethods: ['directive', 'component'],
             overridesEarlierRegistrations: false
         },
         $animateProvider: {
@@ -303,15 +332,34 @@ function ModuleIntrospector(modules, includeNgMock) {
                 registerBuiltInFilters(provider);
             }
 
+            if (name === '$compile') {
+                var $compileProviderDirectiveMethod = providerInstance.directive;
+
+                aroundExecution(providerInstance, 'component', function(proceed) {
+                    try {
+                        providerInstance.directive = angular.noop;
+
+                        return proceed();
+                    } finally {
+                        providerInstance.directive = $compileProviderDirectiveMethod;
+                    }
+                });
+            }
+            
 
             var providerMetadata = metadataPerProvider[providerName];
             var providerMethodsOfProvider = providerMetadata && providerMetadata.providerMethods;
             if (providerMethodsOfProvider) {
                 angular.forEach(providerMethodsOfProvider, function(providerMethodOfProvider) {
                     afterProviderMethodExecution(providerInstance, providerMethodOfProvider, function(
-                        /** string */ name, /** PossiblyAnnotatedFn */ rawDeclaration) {
+                            /** string */ name, /** PossiblyAnnotatedFn */ rawDeclaration) {
+                        var strippedDeclaration = isPossiblyAnnotatedFn(rawDeclaration) ?
+                                stripAnnotations(/** PossiblyAnnotatedFn */ rawDeclaration) : rawDeclaration;
+                        var injectedServices = isPossiblyAnnotatedFn(rawDeclaration) ?
+                                determineDependencies(/** PossiblyAnnotatedFn */ rawDeclaration) : [];
+
                         registerComponentDeclaration(providerName, providerMethodOfProvider, name, rawDeclaration,
-                            stripAnnotations(rawDeclaration), determineDependencies(rawDeclaration));
+                            strippedDeclaration, injectedServices);
                     });
                 });
             }
