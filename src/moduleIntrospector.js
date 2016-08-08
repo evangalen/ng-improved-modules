@@ -406,7 +406,7 @@ function ModuleIntrospector(modules, includeNgMock) {
 
     // create an injector that first captures the "providerInjector", then hooks the $provide methods,
     // after that loads the ng module and finally loads the modules of moduleNames.
-    angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn,
+    var injector = angular.injector([providerInjectorCapturingConfigFn, $provideMethodsHookConfigFn,
             setProcessingBuiltInComponentsTo(true), 'ng',
             setForgetFutureRegisteredComponents(!includeNgMock), 'ngMock', setForgetFutureRegisteredComponents(false),
             setProcessingBuiltInComponentsTo(false)].concat(injectorModules));
@@ -435,6 +435,75 @@ function ModuleIntrospector(modules, includeNgMock) {
         return result;
     };
 
+    /**
+     * @param {string} componentName
+     * @returns {Array.<{
+     *      componentName: string,
+     *      rawDeclaration: *,
+     *      strippedDeclaration: *,
+     *      injectedServices: string[],
+     *      builtIn: boolean
+     *  }>}
+     */
+    this.getNg15ComponentControllers = function(componentName) {
+        var directiveDeclarations = this.getProviderComponentDeclarations('$compileProvider', componentName);
+
+        var result = [];
+
+        angular.forEach(directiveDeclarations, function(directiveDeclaration) {
+            if (directiveDeclaration.providerMethod !== 'component') {
+                return;
+            }
+
+            var componentController = directiveDeclaration.rawDeclaration.controller;
+
+            result.push({
+                componentName: componentName,
+                rawDeclaration: componentController,
+                strippedDeclaration: stripAnnotations(componentController),
+                injectedServices: determineDependencies(componentController),
+                builtIn: directiveDeclaration.builtIn
+            });
+        });
+
+        return result;
+    };
+
+    /**
+     * @param {string} componentName
+     * @returns {Array.<{
+     *      componentName: string,
+     *      rawDeclaration: *,
+     *      strippedDeclaration: *,
+     *      injectedServices: string[],
+     *      builtIn: boolean
+     *  }>}
+     */
+    this.getDirectiveControllers = function(componentName) {
+        var directiveDeclarations = this.getProviderComponentDeclarations('$compileProvider', componentName);
+        
+        var result = [];
+        
+        angular.forEach(directiveDeclarations, function(directiveDeclaration) {
+            if (directiveDeclaration.providerMethod !== 'directive') {
+                return;
+            }
+
+            var directiveDefinition = injector.invoke(directiveDeclaration.rawDeclaration);
+
+            if (directiveDefinition && directiveDefinition.controller) {
+                result.push({
+                    componentName: componentName,
+                    rawDeclaration: directiveDefinition.controller,
+                    strippedDeclaration: stripAnnotations(directiveDefinition.controller),
+                    injectedServices: determineDependencies(directiveDefinition.controller),
+                    builtIn: directiveDeclaration.builtIn
+                });
+            }
+        });
+
+        return result;
+    };
 
     /**
      * @param {string} providerName

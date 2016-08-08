@@ -958,6 +958,153 @@ describe('moduleIntrospector service', function() {
 
 
 
+    describe('getDirectiveControllers method', function() {
+
+        it('should throw an exception for a non existing service', function () {
+            expect(function () {
+                moduleIntrospectorFactory(['aModule']).getDirectiveControllers('nonExistingDirective');
+            }).toThrow('Could not find registered component "nonExistingDirective" for provider: $compileProvider');
+        });
+
+
+        it('should return controllers of built-in (from "ng" module) directive', function() {
+            var result = moduleIntrospectorFactory(['aModule']).getDirectiveControllers('ngSwitch');
+
+            expect(result.length).toBe(1);
+            expect(result[0].componentName).toBe('ngSwitch');
+            expect(angular.isArray(result[0].rawDeclaration)).toBe(true);
+            expect(result[0].rawDeclaration.length).toBe(2);
+            expect(result[0].rawDeclaration[0]).toBe('$scope');
+            expect(angular.isFunction(result[0].rawDeclaration[1])).toBe(true);
+            expect(result[0].strippedDeclaration).toBe(result[0].rawDeclaration[1]);
+            expect(result[0].injectedServices).toEqual(['$scope']);
+            expect(result[0].builtIn).toBe(true);
+        });
+
+        it('should return controller for a directive that was declared only once', function() {
+            var annotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.directive('aDirective', function() {
+                return {
+                    controller: annotatedController
+                };
+            });
+
+            var result = moduleIntrospectorFactory(['aModule']).getDirectiveControllers('aDirective');
+
+            expect(result).toEqual([{
+                componentName: 'aDirective',
+                rawDeclaration: annotatedController,
+                strippedDeclaration: annotatedController[2],
+                injectedServices: annotatedController.slice(0, 2),
+                builtIn: false
+            }]);
+        });
+
+        it('should return controllers for a directive with multiple declarations', function() {
+            var firstAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.directive('aDirective', function() {
+                return {
+                    controller: firstAnnotatedController
+                };
+            });
+
+            var secondAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.directive('aDirective', function() {
+                return {
+                    controller: secondAnnotatedController
+                };
+            });
+
+            var result = moduleIntrospectorFactory(['aModule']).getDirectiveControllers('aDirective');
+
+            expect(result).toEqual(
+                [{
+                    componentName: 'aDirective',
+                    rawDeclaration: firstAnnotatedController,
+                    strippedDeclaration: firstAnnotatedController[2],
+                    injectedServices: firstAnnotatedController.slice(0, 2),
+                    builtIn: false
+                }, {
+                    componentName: 'aDirective',
+                    rawDeclaration: secondAnnotatedController,
+                    strippedDeclaration: secondAnnotatedController[2],
+                    injectedServices: secondAnnotatedController.slice(0, 2),
+                    builtIn: false
+                }]
+            );
+        });
+    });
+
+
+
+    describe('getNg15ComponentControllers method', function() {
+
+        it('should throw an exception for a non existing service', function () {
+            expect(function () {
+                moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('nonExistingComponent');
+            }).toThrow('Could not find registered component "nonExistingComponent" for provider: $compileProvider');
+        });
+
+
+        it('should return controller for an AngularJS 1.5 `.component` that was declared only once', function () {
+            if (!moduleInstance.component) {
+                return;
+            }
+
+            var annotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.component('aNg15Component', {controller: annotatedController});
+
+            var result = moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
+
+            expect(result).toEqual([{
+                componentName: 'aNg15Component',
+                rawDeclaration: annotatedController,
+                strippedDeclaration: annotatedController[2],
+                injectedServices: annotatedController.slice(0, 2),
+                builtIn: false
+            }]);
+        });
+
+        it('should return controllers for an AngularJS 1.5 `.component` with multiple declarations', function() {
+            if (!moduleInstance.component) {
+                return;
+            }
+
+            var firstAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.component('aNg15Component', {controller: firstAnnotatedController});
+
+            var secondAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
+
+            moduleInstance.component('aNg15Component', {controller: secondAnnotatedController});
+
+            var result = moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
+
+            expect(result).toEqual(
+                [{
+                    componentName: 'aNg15Component',
+                    rawDeclaration: firstAnnotatedController,
+                    strippedDeclaration: firstAnnotatedController[2],
+                    injectedServices: firstAnnotatedController.slice(0, 2),
+                    builtIn: false
+                }, {
+                    componentName: 'aNg15Component',
+                    rawDeclaration: secondAnnotatedController,
+                    strippedDeclaration: secondAnnotatedController[2],
+                    injectedServices: secondAnnotatedController.slice(0, 2),
+                    builtIn: false
+                }]
+            );
+        });
+
+    });
+
+
+
     describe('getProviderDeclaration method', function() {
         it('should throw exception for unknown provider name', function() {
             expect(function() {
