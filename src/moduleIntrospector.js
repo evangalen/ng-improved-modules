@@ -333,10 +333,10 @@ function ModuleIntrospector(modules, includeNgMock) {
             }
 
             if (name === '$compile') {
-                var $compileProviderDirectiveMethod = providerInstance.directive;
-
                 if (providerInstance.component) {
                     aroundExecution(providerInstance, 'component', function(proceed) {
+                        var $compileProviderDirectiveMethod = providerInstance.directive;
+
                         try {
                             providerInstance.directive = angular.noop;
 

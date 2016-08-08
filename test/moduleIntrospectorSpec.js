@@ -868,6 +868,38 @@ describe('moduleIntrospector service', function() {
                 }]);
 
             });
+
+            it('should still return a directive declaration even if it was declared after an AngularJS 1.5 ' +
+                    '`.component`', function() {
+                if (!moduleInstance.component) {
+                    return;
+                }
+
+                moduleInstance.component('aNg15Component', {
+                    controller: [function () {
+                        return angular.noop;
+                    }]
+                });
+
+                var directiveLinkFn = jasmine.createSpy();
+
+                var directiveDeclaration = ['anotherService', '$http', function() {
+                    return directiveLinkFn;
+                }];
+
+                moduleInstance.directive('aDirective', directiveDeclaration);
+
+                var result = moduleIntrospectorFactory(['aModule']).getProviderComponentDeclarations('$compileProvider', 'aDirective');
+
+                expect(result).toEqual([{
+                    providerMethod: 'directive',
+                    componentName: 'aDirective',
+                    rawDeclaration: directiveDeclaration,
+                    strippedDeclaration: directiveDeclaration[2],
+                    injectedServices: directiveDeclaration.slice(0, 2),
+                    builtIn: false
+                }]);
+            });
         });
 
 
