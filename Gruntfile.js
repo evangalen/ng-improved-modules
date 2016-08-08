@@ -67,14 +67,14 @@ module.exports = function(grunt) {
                 configFile: 'karma-angular-1.4.conf.js',
                 coverageReporter: {
                     type: 'lcov',
-                    dir: 'coverage/karma-angular-1.4'
+                    dir: 'coverage/angular-1.4'
                 }
             },
             angular_1_5: {
                 configFile: 'karma-angular-1.5.conf.js',
                 coverageReporter: {
                     type: 'lcov',
-                    dir: 'coverage/karma-angular-1.5'
+                    dir: 'coverage/angular-1.5'
                 }
             }
         },
