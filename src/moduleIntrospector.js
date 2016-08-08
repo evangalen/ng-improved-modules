@@ -71,19 +71,17 @@ function ModuleIntrospector(modules, includeNgMock) {
 
     /**
      * @param {object} object
-     * @param {string} methodeName
+     * @param {string} methodName
      * @param {function(Function): *} aroundMethodLogic
      */
     function aroundExecution(object, methodName, aroundMethodLogic) {
         var originalMethod = object[methodName];
 
         object[methodName] = function() {
-            var that = this;
-
             var originalArguments = arguments;
 
             var proceed = function() {
-                return originalMethod.apply(that, originalArguments);
+                return originalMethod.apply(object, originalArguments);
             };
 
             return aroundMethodLogic(proceed);
