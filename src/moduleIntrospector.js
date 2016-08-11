@@ -436,6 +436,7 @@ function ModuleIntrospector(modules, includeNgMock) {
     /**
      * @param {string} componentName
      * @returns {Array.<{
+     *      providerMethod: string,
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
@@ -449,20 +450,27 @@ function ModuleIntrospector(modules, includeNgMock) {
         var result = [];
 
         angular.forEach(directiveDeclarations, function(directiveDeclaration) {
-            if (directiveDeclaration.providerMethod !== 'component') {
-                return;
+            if (directiveDeclaration.providerMethod === 'directive') {
+                throw 'Expected an AngularJS 1.5 `.component` but found a regular directive instead: ' + componentName;
             }
 
-            var componentController = directiveDeclaration.rawDeclaration.controller;
+            var ng15ComponentController = directiveDeclaration.rawDeclaration.controller;
 
-            result.push({
-                componentName: componentName,
-                rawDeclaration: componentController,
-                strippedDeclaration: stripAnnotations(componentController),
-                injectedServices: determineDependencies(componentController),
-                builtIn: directiveDeclaration.builtIn
-            });
+            if (ng15ComponentController) {
+                result.push({
+                    providerMethod: directiveDeclaration.providerMethod,
+                    componentName: componentName,
+                    rawDeclaration: ng15ComponentController,
+                    strippedDeclaration: stripAnnotations(ng15ComponentController),
+                    injectedServices: determineDependencies(ng15ComponentController),
+                    builtIn: directiveDeclaration.builtIn
+                });
+            }
         });
+
+        if (result.length === 0) {
+            throw 'Could not find controllers for AngularJS 1.5 `.component`: ' + componentName;
+        }
 
         return result;
     };
@@ -470,6 +478,7 @@ function ModuleIntrospector(modules, includeNgMock) {
     /**
      * @param {string} componentName
      * @returns {Array.<{
+     *      providerMethod: string,
      *      componentName: string,
      *      rawDeclaration: *,
      *      strippedDeclaration: *,
@@ -483,14 +492,15 @@ function ModuleIntrospector(modules, includeNgMock) {
         var result = [];
         
         angular.forEach(directiveDeclarations, function(directiveDeclaration) {
-            if (directiveDeclaration.providerMethod !== 'directive') {
-                return;
+            if (directiveDeclaration.providerMethod === 'component') {
+                throw 'Expected a regular directive but found an AngularJS 1.5 `.component` instead: ' + componentName;
             }
 
             var directiveDefinition = injector.invoke(directiveDeclaration.rawDeclaration);
 
             if (directiveDefinition && directiveDefinition.controller) {
                 result.push({
+                    providerMethod: directiveDeclaration.providerMethod,
                     componentName: componentName,
                     rawDeclaration: directiveDefinition.controller,
                     strippedDeclaration: stripAnnotations(directiveDefinition.controller),
@@ -499,6 +509,10 @@ function ModuleIntrospector(modules, includeNgMock) {
                 });
             }
         });
+
+        if (result.length === 0) {
+            throw 'Could not find controllers for regular directive: ' + componentName;
+        }
 
         return result;
     };

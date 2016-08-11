@@ -1025,6 +1025,7 @@ describe('moduleIntrospector service', function() {
             var result = moduleIntrospectorFactory(['aModule']).getDirectiveControllers('aDirective');
 
             expect(result).toEqual([{
+                providerMethod: 'directive',
                 componentName: 'aDirective',
                 rawDeclaration: annotatedController,
                 strippedDeclaration: annotatedController[2],
@@ -1054,12 +1055,15 @@ describe('moduleIntrospector service', function() {
 
             expect(result).toEqual(
                 [{
+                    providerMethod: 'directive',
                     componentName: 'aDirective',
                     rawDeclaration: firstAnnotatedController,
                     strippedDeclaration: firstAnnotatedController[2],
                     injectedServices: firstAnnotatedController.slice(0, 2),
                     builtIn: false
-                }, {
+                },
+                {
+                    providerMethod: 'directive',
                     componentName: 'aDirective',
                     rawDeclaration: secondAnnotatedController,
                     strippedDeclaration: secondAnnotatedController[2],
@@ -1067,6 +1071,32 @@ describe('moduleIntrospector service', function() {
                     builtIn: false
                 }]
             );
+        });
+
+        it('should throw exception when not a regular directive but an AngularJS 1.5 `.component`', function() {
+            var annotatedController = ['anotherService', '$http', angular.noop];
+
+            moduleInstance.component('aNg15Component', {controller: annotatedController});
+
+            expect(function() {
+                moduleIntrospectorFactory(['aModule']).getDirectiveControllers('aNg15Component');
+            }).toThrow('Expected a regular directive but found an AngularJS 1.5 `.component` instead: aNg15Component');
+        });
+
+        it('should throw exception when regular directive exists but when it has no controller', function() {
+            var directiveLinkFn = angular.noop;
+
+            anotherModuleInstance.value('anotherService', {});
+            
+            var directiveDeclaration = ['anotherService', '$http', function() {
+                return directiveLinkFn;
+            }];
+
+            moduleInstance.directive('aDirective', directiveDeclaration);
+
+            expect(function() {
+                moduleIntrospectorFactory(['aModule']).getDirectiveControllers('aDirective');
+            }).toThrow('Could not find controllers for regular directive: aDirective');
         });
     });
 
@@ -1093,6 +1123,7 @@ describe('moduleIntrospector service', function() {
             var result = moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
 
             expect(result).toEqual([{
+                providerMethod: 'component',
                 componentName: 'aNg15Component',
                 rawDeclaration: annotatedController,
                 strippedDeclaration: annotatedController[2],
@@ -1106,31 +1137,65 @@ describe('moduleIntrospector service', function() {
                 return;
             }
 
-            var firstAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
+            var firstComponent = {controller: ['anotherService', '$http', angular.noop]};
+            moduleInstance.component('aNg15Component', firstComponent);
 
-            moduleInstance.component('aNg15Component', {controller: firstAnnotatedController});
+            var secondComponent = {};
+            moduleInstance.component('aNg15Component', secondComponent);
 
-            var secondAnnotatedController = ['anotherService', '$http', jasmine.createSpy()];
-
-            moduleInstance.component('aNg15Component', {controller: secondAnnotatedController});
+            var thirdComponent = {controller: function(anotherService, $http) {}};
+            moduleInstance.component('aNg15Component', thirdComponent);
 
             var result = moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
 
             expect(result).toEqual(
                 [{
+                    providerMethod: 'component',
                     componentName: 'aNg15Component',
-                    rawDeclaration: firstAnnotatedController,
-                    strippedDeclaration: firstAnnotatedController[2],
-                    injectedServices: firstAnnotatedController.slice(0, 2),
+                    rawDeclaration: firstComponent.controller,
+                    strippedDeclaration: firstComponent.controller[2],
+                    injectedServices: firstComponent.controller.slice(0, 2),
                     builtIn: false
-                }, {
+                },
+                {
+                    providerMethod: 'component',
                     componentName: 'aNg15Component',
-                    rawDeclaration: secondAnnotatedController,
-                    strippedDeclaration: secondAnnotatedController[2],
-                    injectedServices: secondAnnotatedController.slice(0, 2),
+                    rawDeclaration: thirdComponent.controller,
+                    strippedDeclaration: thirdComponent.controller,
+                    injectedServices: ['anotherService', '$http'],
                     builtIn: false
                 }]
             );
+        });
+
+        it('should throw exception when not an AngularJS 1.5 `.component` but a regular directive', function() {
+            if (!moduleInstance.component) {
+                return;
+            }
+
+            var directiveLinkFn = angular.noop;
+
+            var directiveDeclaration = ['anotherService', '$http', function() {
+                return directiveLinkFn;
+            }];
+
+            moduleInstance.directive('aDirective', directiveDeclaration);
+
+            expect(function() {
+                moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aDirective');
+            }).toThrow('Expected an AngularJS 1.5 `.component` but found a regular directive instead: aDirective');
+        });
+
+        it('should throw exception when AngularJS 1.5 `.component` exists but when it has no controller', function() {
+            if (!moduleInstance.component) {
+                return;
+            }
+
+            moduleInstance.component('aNg15Component', {});
+
+            expect(function() {
+                moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
+            }).toThrow('Could not find controllers for AngularJS 1.5 `.component`: aNg15Component');
         });
 
     });
