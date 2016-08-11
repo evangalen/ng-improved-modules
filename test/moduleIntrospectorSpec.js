@@ -1074,6 +1074,10 @@ describe('moduleIntrospector service', function() {
         });
 
         it('should throw exception when not a regular directive but an AngularJS 1.5 `.component`', function() {
+            if (!moduleInstance.component) {
+                return;
+            }
+            
             var annotatedController = ['anotherService', '$http', angular.noop];
 
             moduleInstance.component('aNg15Component', {controller: annotatedController});
@@ -1143,7 +1147,7 @@ describe('moduleIntrospector service', function() {
             var secondComponent = {};
             moduleInstance.component('aNg15Component', secondComponent);
 
-            var thirdComponent = {controller: function(anotherService, $http) {}};
+            var thirdComponent = {controller: function(anotherService, $http) {}}; // jshint ignore:line
             moduleInstance.component('aNg15Component', thirdComponent);
 
             var result = moduleIntrospectorFactory(['aModule']).getNg15ComponentControllers('aNg15Component');
